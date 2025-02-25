@@ -1,4 +1,4 @@
-// about.js
+// about.js - Updated to fix hydration issue
 import { useState } from 'react';
 import Image from 'next/image';
 import styles from '../styles/About.module.css';
@@ -37,9 +37,17 @@ export default function About() {
     }
   ];
 
+  // Use a deterministic approach for committee roles
+  const committeeRoles = [
+    "Education Committee", "Education Committee", "Education Committee",
+    "Outreach Committee", "Outreach Committee", "Outreach Committee",
+    "Finance Committee", "Finance Committee", "Finance Committee",
+    "Events Committee", "Events Committee", "Events Committee"
+  ];
+  
   const committeeMembers = Array.from({ length: 12 }, (_, index) => ({
     name: `Committee Member ${index + 1}`,
-    role: ["Education", "Outreach", "Finance", "Events"][Math.floor(Math.random() * 4)] + " Committee"
+    role: committeeRoles[index]
   }));
 
   return (
@@ -67,7 +75,12 @@ export default function About() {
           </p>
         </div>
         <div className={styles.historyImageContainer}>
-          <Image src="/images/about-history.jpg" alt="MITRA History" layout="fill" objectFit="cover" />
+          <Image 
+            src="/images/about-history.jpg" 
+            alt="MITRA History" 
+            fill
+            style={{ objectFit: 'cover' }}
+          />
         </div>
       </section>
 
@@ -109,7 +122,12 @@ export default function About() {
           {teamMembers.map((member, index) => (
             <div key={index} className={styles.teamMember}>
               <div className={styles.memberImageContainer}>
-                <Image src={member.image} alt={member.name} layout="fill" objectFit="cover" />
+                <Image 
+                  src={member.image} 
+                  alt={member.name} 
+                  fill
+                  style={{ objectFit: 'cover' }}
+                />
               </div>
               <div className={styles.memberInfo}>
                 <h3 className={styles.memberName}>{member.name}</h3>
@@ -137,7 +155,12 @@ export default function About() {
         <h2 className={styles.sectionTitle}>Sandeepani Gyan Kunj</h2>
         <div className={styles.schoolContent}>
           <div className={styles.schoolImageContainer}>
-            <Image src="/images/school-building.jpg" alt="Sandeepani Gyan Kunj School" layout="fill" objectFit="cover" />
+            <Image 
+              src="/images/school-building.jpg" 
+              alt="Sandeepani Gyan Kunj School" 
+              fill
+              style={{ objectFit: 'cover' }}
+            />
           </div>
           <div className={styles.schoolInfo}>
             <h3 className={styles.schoolTitle}>Our School</h3>

@@ -61,7 +61,7 @@ const NavLinks = styled.div`
 
 // Style the Link component directly
 const NavLink = styled(Link)`
-  color: ${props => props.$scrolled ? props.theme.colors.text : props.theme.colors.white};
+  color: ${props => props.$scrolled ? props.theme.colors.text : props.theme.colors.secondary};
   margin: 0 1rem;
   font-weight: 600;
   position: relative;
