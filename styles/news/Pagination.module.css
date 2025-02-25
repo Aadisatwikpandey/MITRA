@@ -1,0 +1,71 @@
+/* styles/news/Pagination.module.css */
+.paginationContainer {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0 3rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .pageButton {
+    min-width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    color: var(--text);
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+  }
+  
+  .pageButton:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .pageButtonActive {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  
+  .pageButtonActive:hover {
+    background-color: #166638;
+  }
+  
+  .ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    color: var(--light-text);
+  }
+  
+  .arrowButton {
+    background-color: white;
+    color: var(--text);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .arrowButton:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .arrowButton:disabled {
+    background-color: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+  }

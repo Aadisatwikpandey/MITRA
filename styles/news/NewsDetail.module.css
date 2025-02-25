@@ -1,0 +1,184 @@
+/* styles/news/NewsDetail.module.css */
+.container {
+    max-width: 800px;
+    margin: 0 auto 5rem;
+    padding: 0 1rem;
+  }
+  
+  .header {
+    margin-bottom: 2rem;
+  }
+  
+  .category {
+    display: inline-block;
+    background-color: rgba(30, 132, 73, 0.1);
+    color: var(--primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .title {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    line-height: 1.2;
+  }
+  
+  .meta {
+    display: flex;
+    align-items: center;
+    color: var(--light-text);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    gap: 1.5rem;
+  }
+  
+  .date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .views, .likes {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .imageContainer {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+  
+  .content p {
+    margin-bottom: 1.5rem;
+  }
+  
+  .content h2 {
+    font-size: 1.8rem;
+    margin: 2rem 0 1rem;
+    color: var(--primary);
+  }
+  
+  .content h3 {
+    font-size: 1.5rem;
+    margin: 1.5rem 0 1rem;
+    color: var(--primary);
+  }
+  
+  .content ul, .content ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+  }
+  
+  .content li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .content img {
+    max-width: 100%;
+    height: auto;
+    margin: 1.5rem 0;
+    border-radius: 4px;
+  }
+  
+  .likeSection {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+  
+  .likeButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: white;
+    border: 2px solid #e74c3c;
+    color: #e74c3c;
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .likeButton:hover, .likeButtonActive {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .likeButtonActive {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .relatedNews {
+    margin-top: 4rem;
+  }
+  
+  .relatedNewsTitle {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    color: var(--primary);
+    position: relative;
+    padding-bottom: 10px;
+  }
+  
+  .relatedNewsTitle:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 70px;
+    height: 3px;
+    background-color: var(--secondary);
+  }
+  
+  .relatedNewsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+  
+  @media (max-width: 768px) {
+    .title {
+      font-size: 2rem;
+    }
+    
+    .imageContainer {
+      height: 300px;
+    }
+    
+    .meta {
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .relatedNewsGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .title {
+      font-size: 1.75rem;
+    }
+    
+    .imageContainer {
+      height: 250px;
+    }
+  }
