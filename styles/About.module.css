@@ -1,0 +1,321 @@
+/* About.module.css */
+.pageContainer {
+    padding: 0;
+  }
+  
+  .heroSection {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/about-hero.jpg') no-repeat center center;
+    background-size: cover;
+    height: 40vh;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  
+  .pageTitle {
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+  }
+  
+  .section {
+    margin-bottom: 5rem;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .sectionTitle {
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    padding-bottom: 15px;
+    color: #1E8449;
+  }
+  
+  .sectionTitle:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 70px;
+    height: 3px;
+    background-color: #F39C12;
+  }
+  
+  .historySection {
+    margin-bottom: 5rem;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  
+  .historyContent p {
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+  }
+  
+  .historyImageContainer {
+    position: relative;
+    height: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .workDescription {
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+  
+  .workGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .workCard {
+    text-align: center;
+    padding: 2rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .workCard:hover {
+    transform: translateY(-5px);
+  }
+  
+  .workIcon {
+    font-size: 3rem;
+    color: #1E8449;
+    margin-bottom: 1rem;
+  }
+  
+  .workCardTitle {
+    margin-bottom: 1rem;
+    color: #333;
+  }
+  
+  .teamSection {
+    margin-bottom: 5rem;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #FFFFFF;
+  }
+  
+  .teamGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+  }
+  
+  .teamMember {
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .teamMember:hover {
+    transform: translateY(-10px);
+  }
+  
+  .memberImageContainer {
+    position: relative;
+    height: 280px;
+    width: 100%;
+  }
+  
+  .memberInfo {
+    padding: 1.5rem;
+  }
+  
+  .memberName {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: #1E8449;
+  }
+  
+  .memberRole {
+    color: #F39C12;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .memberBio {
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  
+  .committeeSection {
+    margin-bottom: 5rem;
+    padding: 3rem 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #F5F5F5;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .committeeGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .committeeMember {
+    background-color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .committeeMember:hover {
+    background-color: rgba(30, 132, 73, 0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .committeeMemberName {
+    color: #1E8449;
+    margin-bottom: 0.5rem;
+  }
+  
+  .committeeMemberRole {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .schoolSection {
+    margin-top: 2rem;
+    margin-bottom: 5rem;
+    padding: 3rem 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: rgba(30, 132, 73, 0.05);
+    border-radius: 8px;
+  }
+  
+  .schoolContent {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  
+  .schoolImageContainer {
+    position: relative;
+    height: 350px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .schoolInfo h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #1E8449;
+  }
+  
+  .schoolInfo p {
+    margin-bottom: 1.2rem;
+    line-height: 1.7;
+  }
+  
+  .contactSection {
+    margin-bottom: 5rem;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+  
+  .contactTitle {
+    margin-bottom: 1.5rem;
+    color: #1E8449;
+  }
+  
+  .contactDescription {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+  
+  .contactButton {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background-color: #1E8449;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .contactButton:hover {
+    background-color: #166638;
+    transform: translateY(-3px);
+  }
+  
+  /* Media Queries for Responsiveness */
+  @media (max-width: 768px) {
+    .historySection {
+      grid-template-columns: 1fr;
+    }
+    
+    .historyImageContainer {
+      height: 300px;
+      order: -1;
+    }
+    
+    .workGrid {
+      grid-template-columns: 1fr;
+    }
+    
+    .committeeGrid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .schoolContent {
+      grid-template-columns: 1fr;
+    }
+    
+    .schoolImageContainer {
+      height: 250px;
+      margin-bottom: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .pageTitle {
+      font-size: 2.5rem;
+    }
+    
+    .section {
+      padding: 0 1.5rem;
+    }
+    
+    .committeeGrid {
+      grid-template-columns: 1fr;
+    }
+  }
