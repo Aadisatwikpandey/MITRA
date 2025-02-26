@@ -1,5 +1,5 @@
 // components/news/NewsCard.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaHeart, FaArrowRight, FaCalendarAlt } from 'react-icons/fa';
@@ -10,7 +10,12 @@ import styles from '../../styles/news/NewsCard.module.css';
 
 const NewsCard = ({ news, onLike }) => {
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(news.likes || 0);
+  const [likeCount, setLikeCount] = useState(0);
+  
+  // Initialize client-side state after component mounts
+  useEffect(() => {
+    setLikeCount(news.likes || 0);
+  }, [news.likes]);
   
   const handleLike = async (e) => {
     e.preventDefault();
@@ -22,8 +27,10 @@ const NewsCard = ({ news, onLike }) => {
         setLiked(true);
         setLikeCount(prevCount => prevCount + 1);
         
-        // Track like in analytics
-        trackNewsLike(news.id);
+        // Track like in analytics - only run on client
+        if (typeof window !== 'undefined') {
+          trackNewsLike(news.id);
+        }
         
         // Call the parent component's onLike function if provided
         if (onLike) {
@@ -42,8 +49,9 @@ const NewsCard = ({ news, onLike }) => {
           <Image 
             src={news.image} 
             alt={news.title}
-            layout="fill"
-            objectFit="cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            style={{ objectFit: 'cover' }}
           />
         ) : (
           <div className={styles.fallbackImage}>
@@ -59,15 +67,15 @@ const NewsCard = ({ news, onLike }) => {
             {formatRelativeTime(news.publishDate)}
           </div>
           
-          {news.category && (
+          {news.category ? (
             <span className={styles.category}>{news.category}</span>
-          )}
+          ) : null}
         </div>
         
         <h3 className={styles.title}>{news.title}</h3>
         
         <p className={styles.excerpt}>
-          {news.excerpt || news.content.substring(0, 100) + '...'}
+          {news.excerpt || (news.content && news.content.substring(0, 100) + '...') || ''}
         </p>
         
         <div className={styles.footer}>

@@ -1,4 +1,5 @@
 // components/news/FeaturedNews.js
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaCalendarAlt, FaFacebookF, FaTwitter, FaWhatsapp } from 'react-icons/fa';
@@ -7,14 +8,22 @@ import { trackNewsShare } from '../../utils/analytics';
 import styles from '../../styles/news/FeaturedNews.module.css';
 
 const FeaturedNews = ({ news }) => {
+  const [shareUrl, setShareUrl] = useState('');
+  
+  useEffect(() => {
+    // Set share URL after component mounts (client-side only)
+    if (typeof window !== 'undefined') {
+      setShareUrl(`${window.location.origin}/news-events/${news.slug}`);
+    }
+  }, [news.slug]);
+  
   if (!news) return null;
   
-  const shareUrl = typeof window !== 'undefined' ? 
-    `${window.location.origin}/news-events/${news.slug}` : 
-    `/news-events/${news.slug}`;
-    
   const handleShare = (platform) => {
-    trackNewsShare(news.id, platform);
+    // Only track on client
+    if (typeof window !== 'undefined') {
+      trackNewsShare(news.id, platform);
+    }
     
     let shareLink = '';
     
@@ -30,7 +39,7 @@ const FeaturedNews = ({ news }) => {
         break;
     }
     
-    if (shareLink) {
+    if (shareLink && typeof window !== 'undefined') {
       window.open(shareLink, '_blank', 'width=600,height=400');
     }
   };
@@ -45,8 +54,9 @@ const FeaturedNews = ({ news }) => {
             <Image 
               src={news.image} 
               alt={news.title}
-              layout="fill"
-              objectFit="cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              style={{ objectFit: 'cover' }}
               priority
             />
           ) : (
@@ -63,15 +73,15 @@ const FeaturedNews = ({ news }) => {
               {formatRelativeTime(news.publishDate)}
             </div>
             
-            {news.category && (
+            {news.category ? (
               <span className={styles.category}>{news.category}</span>
-            )}
+            ) : null}
           </div>
           
           <h3 className={styles.title}>{news.title}</h3>
           
           <p className={styles.description}>
-            {news.excerpt || news.content.substring(0, 150) + '...'}
+            {news.excerpt || (news.content && news.content.substring(0, 150) + '...') || ''}
           </p>
           
           <div className={styles.footer}>
