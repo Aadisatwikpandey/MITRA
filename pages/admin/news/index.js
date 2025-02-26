@@ -3,60 +3,10 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaStar } from 'react-icons/fa';
-import { formatFullDate } from '../../../utils/dateFormatter';
+import { FaPlus, FaEdit, FaTrash, FaEye, FaStar, FaSearch, FaNewspaper, FaUsers, FaChartBar } from 'react-icons/fa';import { formatFullDate } from '../../../utils/dateFormatter';
 import { newsService } from '../../../lib/newsService';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from '../../../styles/admin/Dashboard.module.css';
-
-// Mock data for development (to be replaced with actual Firestore data)
-const MOCK_NEWS = [
-  {
-    id: '1',
-    title: 'New Computer Lab Inauguration',
-    slug: 'new-computer-lab-inauguration',
-    publishDate: new Date(2024, 9, 15),
-    category: 'School Updates',
-    likes: 24,
-    featured: true
-  },
-  {
-    id: '2',
-    title: 'Annual Cultural Festival "Sanskriti 2024"',
-    slug: 'annual-cultural-festival-sanskriti-2024',
-    publishDate: new Date(2024, 9, 10),
-    category: 'Events',
-    likes: 18,
-    featured: false
-  },
-  {
-    id: '3',
-    title: 'Teacher Training Workshop',
-    slug: 'teacher-training-workshop',
-    publishDate: new Date(2024, 9, 5),
-    category: 'Training',
-    likes: 12,
-    featured: false
-  },
-  {
-    id: '4',
-    title: 'Community Health Camp Success',
-    slug: 'community-health-camp-success',
-    publishDate: new Date(2024, 8, 28),
-    category: 'Community Outreach',
-    likes: 31,
-    featured: false
-  },
-  {
-    id: '5',
-    title: 'New Scholarship Program for Girls',
-    slug: 'new-scholarship-program-for-girls',
-    publishDate: new Date(2024, 8, 20),
-    category: 'Education',
-    likes: 45,
-    featured: false
-  }
-];
 
 const NewsDashboard = () => {
   const router = useRouter();
@@ -69,20 +19,30 @@ const NewsDashboard = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [newsToDelete, setNewsToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [stats, setStats] = useState({
+    total: 0,
+    featured: 0,
+    categories: {}
+  });
   const itemsPerPage = 10;
-  
-  // Categories derived from news items
-  const categories = ['All', ...Array.from(new Set(news.map(item => item.category)))];
   
   // Load news data
   useEffect(() => {
     const fetchNews = async () => {
       setLoading(true);
       try {
-        // In production, this would be a call to fetch data from Firestore
-        // For development, use mock data
-        setNews(MOCK_NEWS);
-        setFilteredNews(MOCK_NEWS);
+        // Get all news items
+        const allNews = await newsService.getAllNews();
+        setNews(allNews);
+        setFilteredNews(allNews);
+        
+        // Get statistics
+        const statistics = await newsService.getStatistics();
+        setStats({
+          total: statistics.totalNews,
+          featured: statistics.featuredCount,
+          categories: statistics.categories
+        });
       } catch (err) {
         console.error('Error fetching news:', err);
         setError('Failed to load news items. Please try again.');
@@ -93,6 +53,9 @@ const NewsDashboard = () => {
     
     fetchNews();
   }, []);
+  
+  // Categories derived from news items
+  const categories = ['All', ...Object.keys(stats.categories).sort()];
   
   // Filter news based on search and category
   useEffect(() => {
@@ -108,7 +71,8 @@ const NewsDashboard = () => {
       const term = searchTerm.toLowerCase();
       results = results.filter(item => 
         item.title.toLowerCase().includes(term) || 
-        item.category.toLowerCase().includes(term)
+        item.category.toLowerCase().includes(term) ||
+        item.excerpt?.toLowerCase().includes(term)
       );
     }
     
@@ -143,9 +107,14 @@ const NewsDashboard = () => {
     if (!newsToDelete) return;
     
     try {
-      // In production, this would call the API to delete from Firestore
-      // For now, just remove from local state
+      await newsService.deleteNews(newsToDelete.id);
+      
+      // Remove from state
       setNews(prev => prev.filter(item => item.id !== newsToDelete.id));
+      
+      // Show success message
+      alert('News item deleted successfully!');
+      
       closeDeleteModal();
     } catch (err) {
       console.error('Error deleting news:', err);
@@ -157,14 +126,30 @@ const NewsDashboard = () => {
   // Handle set featured
   const handleSetFeatured = async (newsId) => {
     try {
-      // In production, this would call the API to update Firestore
-      // For now, update local state
+      // Get current news item
+      const currentItem = news.find(item => item.id === newsId);
+      if (!currentItem) return;
+      
+      // First, remove featured flag from all items
+      const updatedItems = await Promise.all(
+        news
+          .filter(item => item.featured)
+          .map(item => newsService.updateNews(item.id, { featured: false }))
+      );
+      
+      // Then set the selected item as featured
+      await newsService.updateNews(newsId, { featured: true });
+      
+      // Update state
       setNews(prev => 
         prev.map(item => ({
           ...item,
           featured: item.id === newsId
         }))
       );
+      
+      // Show success message
+      alert('Featured news updated successfully!');
     } catch (err) {
       console.error('Error setting featured news:', err);
       setError('Failed to update featured status. Please try again.');
@@ -207,16 +192,58 @@ const NewsDashboard = () => {
           </Link>
         </div>
         
+        {/* Stats Cards */}
+        <div className={styles.statsGrid}>
+          <div className={styles.card}>
+            <div className={styles.cardIconContainer} style={{ backgroundColor: 'rgba(30, 132, 73, 0.1)' }}>
+              <div className={styles.cardIcon} style={{ color: '#1E8449' }}>
+                <FaNewspaper />
+              </div>
+            </div>
+            <div className={styles.cardContent}>
+              <h3 className={styles.cardTitle}>Total News</h3>
+              <p className={styles.cardValue}>{stats.total}</p>
+            </div>
+          </div>
+          
+          <div className={styles.card}>
+            <div className={styles.cardIconContainer} style={{ backgroundColor: 'rgba(243, 156, 18, 0.1)' }}>
+              <div className={styles.cardIcon} style={{ color: '#F39C12' }}>
+                <FaStar />
+              </div>
+            </div>
+            <div className={styles.cardContent}>
+              <h3 className={styles.cardTitle}>Featured</h3>
+              <p className={styles.cardValue}>{stats.featured}</p>
+            </div>
+          </div>
+          
+          <div className={styles.card}>
+            <div className={styles.cardIconContainer} style={{ backgroundColor: 'rgba(52, 152, 219, 0.1)' }}>
+              <div className={styles.cardIcon} style={{ color: '#3498DB' }}>
+                <FaEye />
+              </div>
+            </div>
+            <div className={styles.cardContent}>
+              <h3 className={styles.cardTitle}>Categories</h3>
+              <p className={styles.cardValue}>{Object.keys(stats.categories).length}</p>
+            </div>
+          </div>
+        </div>
+        
         {error && <div className={styles.error}>{error}</div>}
         
         <div className={styles.filterSection}>
-          <input
-            type="text"
-            placeholder="Search news..."
-            className={styles.searchInput}
-            value={searchTerm}
-            onChange={handleSearch}
-          />
+          <div className={styles.searchContainer}>
+            <FaSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Search news..."
+              className={styles.searchInput}
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
           
           <select 
             className={styles.filterDropdown}
@@ -225,14 +252,17 @@ const NewsDashboard = () => {
           >
             {categories.map(category => (
               <option key={category} value={category}>
-                {category}
+                {category} {category !== 'All' ? `(${stats.categories[category] || 0})` : ''}
               </option>
             ))}
           </select>
         </div>
         
         {loading ? (
-          <div className={styles.loading}>Loading news items...</div>
+          <div className={styles.loading}>
+            <div className={styles.spinner}></div>
+            <p>Loading news items...</p>
+          </div>
         ) : paginatedNews.length === 0 ? (
           <div className={styles.noResults}>
             <h3>No news items found</h3>
@@ -247,6 +277,7 @@ const NewsDashboard = () => {
                   <th>Category</th>
                   <th>Date</th>
                   <th>Likes</th>
+                  <th>Views</th>
                   <th>Featured</th>
                   <th>Actions</th>
                 </tr>
@@ -257,7 +288,8 @@ const NewsDashboard = () => {
                     <td>{item.title}</td>
                     <td>{item.category}</td>
                     <td>{formatFullDate(item.publishDate)}</td>
-                    <td>{item.likes}</td>
+                    <td>{item.likes || 0}</td>
+                    <td>{item.viewCount || 0}</td>
                     <td>
                       {item.featured ? (
                         <span className={styles.featured}>Featured</span>

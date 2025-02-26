@@ -64,62 +64,14 @@
     margin-top: 0.5rem;
   }
   
-  .imageUpload {
-    border: 2px dashed #ddd;
-    padding: 2rem;
+  .successMessage {
+    background-color: rgba(39, 174, 96, 0.1);
+    color: #27AE60;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
     border-radius: 4px;
+    font-weight: 600;
     text-align: center;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .imageUpload:hover {
-    border-color: var(--primary);
-    background-color: rgba(30, 132, 73, 0.05);
-  }
-  
-  .uploadIcon {
-    font-size: 2rem;
-    color: #ddd;
-    margin-bottom: 1rem;
-  }
-  
-  .uploadText {
-    color: var(--light-text);
-    margin-bottom: 0.5rem;
-  }
-  
-  .imagePreview {
-    margin-top: 1rem;
-    position: relative;
-  }
-  
-  .previewImage {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .removeImage {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    background-color: white;
-    border: 1px solid #ddd;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .removeImage:hover {
-    background-color: #f5f5f5;
   }
   
   .checkboxGroup {

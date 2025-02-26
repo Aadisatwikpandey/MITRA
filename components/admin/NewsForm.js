@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import Image from 'next/image';
-import { FaUpload, FaTimes } from 'react-icons/fa';
+import { FaTimes } from 'react-icons/fa';
 import { newsService } from '../../lib/newsService';
+import ImageUpload from './ImageUpload';
 import styles from '../../styles/admin/NewsForm.module.css';
 
 // Predefined category options
@@ -28,14 +28,16 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
     category: 'School Updates',
     excerpt: '',
     content: '',
-    image: null,
-    imageUrl: '',
+    image: {
+      url: '',
+      publicId: ''
+    },
     featured: false,
     publishDate: new Date().toISOString().split('T')[0] // Format as YYYY-MM-DD
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState('');
+  const [success, setSuccess] = useState('');
   
   // Initialize form with existing data if in edit mode
   useEffect(() => {
@@ -44,21 +46,22 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
         ? initialData.publishDate.toISOString().split('T')[0]
         : new Date(initialData.publishDate).toISOString().split('T')[0];
       
+      // Structure the image data properly
+      const imageData = {
+        url: initialData.image || '',
+        publicId: initialData.imagePublicId || ''
+      };
+      
       setFormData({
         title: initialData.title || '',
         slug: initialData.slug || '',
         category: initialData.category || 'School Updates',
         excerpt: initialData.excerpt || '',
         content: initialData.content || '',
-        image: null,
-        imageUrl: initialData.image || '',
+        image: imageData,
         featured: initialData.featured || false,
         publishDate
       });
-      
-      if (initialData.image) {
-        setImagePreview(initialData.image);
-      }
     }
   }, [isEdit, initialData]);
   
@@ -97,56 +100,16 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
   };
   
   // Handle image upload
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setErrors(prev => ({ 
-        ...prev, 
-        image: 'Please upload an image file (JPEG, PNG, GIF, or WEBP)' 
-      }));
-      return;
-    }
-    
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setErrors(prev => ({ 
-        ...prev, 
-        image: 'Image size should be less than 2MB' 
-      }));
-      return;
-    }
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-    
+  const handleImageChange = (imageData) => {
     setFormData(prev => ({
       ...prev,
-      image: file,
-      imageUrl: '' // Clear existing URL when uploading a new file
+      image: imageData
     }));
     
     // Clear image error
     if (errors.image) {
       setErrors(prev => ({ ...prev, image: null }));
     }
-  };
-  
-  // Remove image
-  const handleRemoveImage = () => {
-    setFormData(prev => ({
-      ...prev,
-      image: null,
-      imageUrl: ''
-    }));
-    setImagePreview('');
   };
   
   // Validate form
@@ -175,7 +138,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
       newErrors.publishDate = 'Publish date is required';
     }
     
-    if (!imagePreview && !isEdit) {
+    if (!formData.image.url && !isEdit) {
       newErrors.image = 'Image is required';
     }
     
@@ -193,19 +156,37 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
     }
     
     setLoading(true);
+    setSuccess('');
     
     try {
-      // In production, this would:
-      // 1. Upload image to Cloudinary if there's a new image
-      // 2. Save data to Firestore
+      // Prepare data for submission
+      const newsData = {
+        title: formData.title,
+        slug: formData.slug,
+        category: formData.category,
+        excerpt: formData.excerpt,
+        content: formData.content,
+        image: formData.image.url,
+        imagePublicId: formData.image.publicId,
+        featured: formData.featured,
+        publishDate: new Date(formData.publishDate)
+      };
       
-      // For development, just simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (isEdit) {
+        // Update existing news
+        await newsService.updateNews(initialData.id, newsData);
+        setSuccess('News updated successfully!');
+      } else {
+        // Create new news
+        await newsService.createNews(newsData);
+        setSuccess('News created successfully!');
+      }
       
-      console.log('Form data submitted:', formData);
+      // Redirect after a delay for the success message to be visible
+      setTimeout(() => {
+        router.push('/admin/news');
+      }, 1500);
       
-      // Redirect to news dashboard after successful submission
-      router.push('/admin/news');
     } catch (error) {
       console.error('Error saving news:', error);
       setErrors(prev => ({ 
@@ -229,6 +210,12 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
         </p>
       </div>
       
+      {success && (
+        <div className={styles.successMessage}>
+          {success}
+        </div>
+      )}
+      
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
           <label className={styles.formLabel} htmlFor="title">
@@ -241,6 +228,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
             className={styles.formInput}
             value={formData.title}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.title && <p className={styles.error}>{errors.title}</p>}
         </div>
@@ -259,6 +247,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
             className={styles.formInput}
             value={formData.slug}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.slug && <p className={styles.error}>{errors.slug}</p>}
         </div>
@@ -273,6 +262,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
             className={styles.formSelect}
             value={formData.category}
             onChange={handleChange}
+            disabled={loading}
           >
             {CATEGORIES.map(category => (
               <option key={category} value={category}>
@@ -297,6 +287,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
             value={formData.excerpt}
             onChange={handleChange}
             rows={3}
+            disabled={loading}
           />
         </div>
         
@@ -311,6 +302,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
             value={formData.content}
             onChange={handleChange}
             rows={10}
+            disabled={loading}
           />
           {errors.content && <p className={styles.error}>{errors.content}</p>}
         </div>
@@ -319,55 +311,14 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
           <label className={styles.formLabel}>
             Featured Image {!isEdit && '*'}
           </label>
-          <input
-            type="file"
-            id="image"
-            name="image"
-            accept="image/*"
-            onChange={handleImageChange}
-            style={{ display: 'none' }}
-          />
-          <label htmlFor="image" className={styles.imageUpload}>
-            <div className={styles.uploadIcon}>
-              <FaUpload />
-            </div>
-            <p className={styles.uploadText}>
-              Click to select an image or drag it here
-            </p>
-            <p style={{ fontSize: '0.8rem', color: 'var(--light-text)' }}>
-              Max file size: 2MB. Supported formats: JPEG, PNG, GIF, WEBP
-            </p>
-          </label>
-          {errors.image && <p className={styles.error}>{errors.image}</p>}
           
-          {imagePreview && (
-            <div className={styles.imagePreview}>
-              {/* Use Next.js Image for preview if it's a URL, otherwise use img tag for File objects */}
-              {typeof imagePreview === 'string' && imagePreview.startsWith('http') ? (
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  width={300}
-                  height={200}
-                  objectFit="cover"
-                  className={styles.previewImage}
-                />
-              ) : (
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className={styles.previewImage} 
-                />
-              )}
-              <button
-                type="button"
-                className={styles.removeImage}
-                onClick={handleRemoveImage}
-              >
-                <FaTimes />
-              </button>
-            </div>
-          )}
+          <ImageUpload 
+            value={formData.image.url}
+            onChange={handleImageChange}
+            maxSizeMB={2}
+          />
+          
+          {errors.image && <p className={styles.error}>{errors.image}</p>}
         </div>
         
         <div className={styles.formGroup}>
@@ -381,6 +332,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
             className={styles.formInput}
             value={formData.publishDate}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.publishDate && <p className={styles.error}>{errors.publishDate}</p>}
         </div>
@@ -394,6 +346,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
               className={`${styles.formInput} ${styles.checkbox}`}
               checked={formData.featured}
               onChange={handleChange}
+              disabled={loading}
             />
             <label className={styles.formLabel} htmlFor="featured" style={{ marginBottom: 0 }}>
               Set as featured
@@ -405,7 +358,7 @@ const NewsForm = ({ initialData = null, isEdit = false }) => {
         
         <div className={styles.buttonGroup}>
           <Link href="/admin/news">
-            <button type="button" className={styles.cancelButton}>
+            <button type="button" className={styles.cancelButton} disabled={loading}>
               Cancel
             </button>
           </Link>

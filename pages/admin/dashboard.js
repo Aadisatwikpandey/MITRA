@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { FaNewspaper, FaUsers, FaChartBar, FaCalendarAlt, FaEdit } from 'react-icons/fa';
+import { FaNewspaper, FaUsers, FaChartBar, FaCalendarAlt, FaEdit, FaStar } from 'react-icons/fa';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { newsService } from '../../lib/newsService';
 import styles from '../../styles/admin/Dashboard.module.css';
 
 // Dashboard card component
@@ -23,10 +24,10 @@ const DashboardCard = ({ title, value, icon, color, link }) => (
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    news: 0,
-    events: 0,
-    users: 0,
-    views: 0
+    totalNews: 0,
+    featuredCount: 0,
+    totalViews: 0,
+    totalLikes: 0
   });
   const [recentNews, setRecentNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,37 +38,13 @@ export default function Dashboard() {
       try {
         setLoading(true);
         
-        // In production, this would call Firebase
-        // For development, use mock data
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Get statistics
+        const statistics = await newsService.getStatistics();
+        setStats(statistics);
         
-        setStats({
-          news: 8,
-          events: 4,
-          users: 12,
-          views: 1250
-        });
-        
-        setRecentNews([
-          {
-            id: '1',
-            title: 'New Computer Lab Inauguration',
-            category: 'School Updates',
-            publishDate: new Date(2024, 9, 15)
-          },
-          {
-            id: '2',
-            title: 'Annual Cultural Festival "Sanskriti 2024"',
-            category: 'Events',
-            publishDate: new Date(2024, 9, 10)
-          },
-          {
-            id: '3',
-            title: 'Teacher Training Workshop',
-            category: 'Training',
-            publishDate: new Date(2024, 9, 5)
-          }
-        ]);
+        // Get recent news
+        const { news } = await newsService.getPaginatedNews(null, 3);
+        setRecentNews(news);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -104,34 +81,34 @@ export default function Dashboard() {
         <div className={styles.statsGrid}>
           <DashboardCard
             title="Total News"
-            value={stats.news}
+            value={stats.totalNews}
             icon={<FaNewspaper />}
             color="#1E8449"
             link="/admin/news"
           />
           
           <DashboardCard
-            title="Total Events"
-            value={stats.events}
-            icon={<FaCalendarAlt />}
+            title="Total Views"
+            value={stats.totalViews}
+            icon={<FaChartBar />}
             color="#F39C12"
-            link="/admin/events"
+            link="/admin/analytics"
           />
           
           <DashboardCard
-            title="Users"
-            value={stats.users}
+            title="Total Likes"
+            value={stats.totalLikes}
             icon={<FaUsers />}
             color="#3498DB"
-            link="/admin/users"
+            link="/admin/analytics"
           />
           
           <DashboardCard
-            title="Page Views"
-            value={stats.views}
-            icon={<FaChartBar />}
+            title="Featured News"
+            value={stats.featuredCount}
+            icon={<FaStar />}
             color="#9B59B6"
-            link="/admin/analytics"
+            link="/admin/news"
           />
         </div>
         
@@ -145,7 +122,10 @@ export default function Dashboard() {
           
           <div className={styles.recentList}>
             {loading ? (
-              <p>Loading recent news...</p>
+              <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+                <p>Loading recent news...</p>
+              </div>
             ) : recentNews.length === 0 ? (
               <p>No recent news found</p>
             ) : (

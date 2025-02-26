@@ -17,13 +17,29 @@ import {
   FaChartBar
 } from 'react-icons/fa';
 import { authService } from '../../lib/authService';
+import withAuth from './withAuth';
 import styles from '../../styles/admin/AdminLayout.module.css';
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = ({ children, user }) => {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userInitial, setUserInitial] = useState('');
+  
+  // Process user data
+  useEffect(() => {
+    if (user) {
+      // Get display name or email
+      const displayName = user.displayName || user.email || 'Admin';
+      setUserName(displayName);
+      
+      // Get first initial for avatar
+      const initial = displayName.charAt(0).toUpperCase();
+      setUserInitial(initial);
+    }
+  }, [user]);
   
   // Handle sidebar toggle
   const toggleSidebar = () => {
@@ -52,7 +68,7 @@ const AdminLayout = ({ children }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [dropdownOpen]);
+  }, [dropdownOpen, styles.userMenu]);
   
   // Close mobile menu on route change
   useEffect(() => {
@@ -62,11 +78,11 @@ const AdminLayout = ({ children }) => {
   // Handle logout
   const handleLogout = async () => {
     try {
-      // In production, this would call Firebase Auth
-      // For development, just redirect
-      router.push('/admin/login');
+      await authService.signOut();
+      router.replace('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);
+      alert('Failed to logout. Please try again.');
     }
   };
   
@@ -91,8 +107,6 @@ const AdminLayout = ({ children }) => {
       >
         <div className={styles.logo}>
           <div className={styles.logoImage}>
-            {/* If you have a logo image */}
-            {/* <Image src="/images/mitra-logo.png" alt="MITRA Logo" width={40} height={40} /> */}
             <FaTachometerAlt color="white" size={24} />
           </div>
           <div className={`${styles.logoText} ${collapsed ? styles.logoTextHidden : ''}`}>
@@ -217,9 +231,9 @@ const AdminLayout = ({ children }) => {
                 aria-haspopup="true"
               >
                 <div className={styles.avatar}>
-                  <FaUser />
+                  {userInitial}
                 </div>
-                <span className={styles.userName}>Admin</span>
+                <span className={styles.userName}>{userName}</span>
               </button>
               
               <div className={`${styles.dropdown} ${dropdownOpen ? styles.dropdownVisible : ''}`}>
@@ -259,4 +273,4 @@ const AdminLayout = ({ children }) => {
   );
 };
 
-export default AdminLayout;
+export default withAuth(AdminLayout);

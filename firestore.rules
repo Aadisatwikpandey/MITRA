@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if the user is an admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
+    // News collection rules
+    match /news/{newsId} {
+      // Allow read access to all authenticated and unauthenticated users
+      allow read: if true;
+      
+      // Allow write access only to admin users
+      allow write: if isAdmin();
+      
+      // Allow increment operations for likes and views to all users
+      allow update: if 
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'viewCount']) &&
+        request.resource.data.likes >= resource.data.likes &&
+        request.resource.data.viewCount >= resource.data.viewCount;
+    }
+    
+    // Events collection rules (similar to news)
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Users collection rules
+    match /users/{userId} {
+      // Users can read and write their own data
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Admins can read all user data, but can only write non-critical fields
+      allow read: if isAdmin();
+      allow update: if 
+        isAdmin() && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin']);
+      
+      // Only allow admins to create new user documents
+      allow create: if isAdmin();
+    }
+    
+    // Admin collection rules
+    match /admin/{document=**} {
+      // Only allow admin access to admin collection
+      allow read, write: if isAdmin();
+    }
+    
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
