@@ -1,6 +1,5 @@
 // components/admin/AdminLayout.js
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { 
@@ -122,7 +121,7 @@ const AdminLayout = ({ children, user }) => {
           {collapsed ? <FaChevronRight size={10} /> : <FaChevronLeft size={10} />}
         </button>
         
-        <nav>
+        <nav className={styles.navContainer}>
           <ul className={styles.navMenu}>
             <li className={styles.navItem}>
               <Link 
@@ -209,6 +208,21 @@ const AdminLayout = ({ children, user }) => {
             </li>
           </ul>
         </nav>
+        
+        {/* Logout button in sidebar footer */}
+        <div className={styles.sidebarFooter}>
+          <button 
+            className={styles.sidebarLogoutButton}
+            onClick={handleLogout}
+          >
+            <span className={styles.navIcon}>
+              <FaSignOutAlt />
+            </span>
+            <span className={`${styles.navLabel} ${collapsed ? styles.navLabelHidden : ''}`}>
+              Logout
+            </span>
+          </button>
+        </div>
       </aside>
       
       {/* Main Content */}
@@ -267,7 +281,7 @@ const AdminLayout = ({ children, user }) => {
           </div>
         </header>
         
-        <div>{children}</div>
+        <div className={styles.pageContent}>{children}</div>
       </main>
     </div>
   );

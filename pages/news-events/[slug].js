@@ -11,13 +11,41 @@ import styles from '../../styles/news/NewsEventsPage.module.css';
 const serializeData = (data) => {
   if (!data) return null;
   
-  // Convert Date objects to ISO strings in the data
-  return {
-    ...data,
-    publishDate: data.publishDate instanceof Date 
-      ? data.publishDate.toISOString() 
-      : data.publishDate
-  };
+  // Create a new object with serialized data
+  const serialized = { ...data };
+  
+  // Convert Date objects to ISO strings
+  if (serialized.publishDate instanceof Date) {
+    serialized.publishDate = serialized.publishDate.toISOString();
+  }
+  
+  // Handle updatedAt (Firestore Timestamp)
+  if (serialized.updatedAt) {
+    // Convert Timestamp to ISO string if it has toDate()
+    if (typeof serialized.updatedAt.toDate === 'function') {
+      serialized.updatedAt = serialized.updatedAt.toDate().toISOString();
+    } else if (serialized.updatedAt instanceof Date) {
+      serialized.updatedAt = serialized.updatedAt.toISOString();
+    } else {
+      // Remove if not serializable
+      delete serialized.updatedAt;
+    }
+  }
+  
+  // Handle createdAt (Firestore Timestamp)
+  if (serialized.createdAt) {
+    // Convert Timestamp to ISO string if it has toDate()
+    if (typeof serialized.createdAt.toDate === 'function') {
+      serialized.createdAt = serialized.createdAt.toDate().toISOString();
+    } else if (serialized.createdAt instanceof Date) {
+      serialized.createdAt = serialized.createdAt.toISOString();
+    } else {
+      // Remove if not serializable
+      delete serialized.createdAt;
+    }
+  }
+  
+  return serialized;
 };
 
 // Helper function to convert arrays with Date objects
@@ -38,7 +66,9 @@ export default function NewsDetailPage({ newsItem, relatedNews, error }) {
     
     return {
       ...item,
-      publishDate: item.publishDate ? new Date(item.publishDate) : null
+      publishDate: item.publishDate ? new Date(item.publishDate) : null,
+      updatedAt: item.updatedAt ? new Date(item.updatedAt) : null,
+      createdAt: item.createdAt ? new Date(item.createdAt) : null
     };
   };
   

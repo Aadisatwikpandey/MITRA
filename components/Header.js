@@ -34,7 +34,7 @@ const Logo = styled.div`
 `;
 
 const LogoText = styled.span`
-  color: ${props => props.$scrolled ? props.theme.colors.primary : props.theme.colors.white};
+  color: ${props => props.$scrolled ? props.theme.colors.primary : props.theme.colors.primary};
   font-size: 1.5rem;
   font-weight: 700;
   font-family: ${props => props.theme.fonts.heading};

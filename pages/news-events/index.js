@@ -16,12 +16,36 @@ const ITEMS_PER_PAGE = 6;
 const serializeData = (item) => {
   if (!item) return null;
   
-  return {
-    ...item,
-    publishDate: item.publishDate instanceof Date 
-      ? item.publishDate.toISOString() 
-      : item.publishDate
-  };
+  // Create a new object with serialized data
+  const serialized = { ...item };
+  
+  // Convert Date objects to ISO strings
+  if (serialized.publishDate instanceof Date) {
+    serialized.publishDate = serialized.publishDate.toISOString();
+  }
+  
+  // Remove non-serializable fields (or convert them if needed)
+  if (serialized.updatedAt) {
+    // Convert Timestamp to ISO string if it has toDate()
+    if (typeof serialized.updatedAt.toDate === 'function') {
+      serialized.updatedAt = serialized.updatedAt.toDate().toISOString();
+    } else {
+      // If it's already a Date
+      serialized.updatedAt = new Date(serialized.updatedAt).toISOString();
+    }
+  }
+  
+  if (serialized.createdAt) {
+    // Convert Timestamp to ISO string if it has toDate()
+    if (typeof serialized.createdAt.toDate === 'function') {
+      serialized.createdAt = serialized.createdAt.toDate().toISOString();
+    } else {
+      // If it's already a Date
+      serialized.createdAt = new Date(serialized.createdAt).toISOString();
+    }
+  }
+  
+  return serialized;
 };
 
 // Helper function to convert arrays with Date objects
@@ -38,7 +62,9 @@ export default function NewsEvents({ initialNews = [], initialFeatured = null, c
     
     return {
       ...item,
-      publishDate: item.publishDate ? new Date(item.publishDate) : null
+      publishDate: item.publishDate ? new Date(item.publishDate) : null,
+      updatedAt: item.updatedAt ? new Date(item.updatedAt) : null,
+      createdAt: item.createdAt ? new Date(item.createdAt) : null
     };
   };
   
