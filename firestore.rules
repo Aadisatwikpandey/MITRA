@@ -53,6 +53,24 @@ service cloud.firestore {
       // Only allow admin access to admin collection
       allow read, write: if isAdmin();
     }
+
+    // Gallery collection rules
+    match /gallery/{galleryId} {
+      // Allow read access to all authenticated and unauthenticated users
+      allow read: if true;
+      
+      // Allow write access only to admin users
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Gallery categories collection rules
+    match /gallery-categories/{categoryId} {
+      // Allow read access to all authenticated and unauthenticated users
+      allow read: if true;
+      
+      // Allow write access only to admin users
+      allow create, update, delete: if isAdmin();
+    }
     
     // Default rule - deny all other access
     match /{document=**} {

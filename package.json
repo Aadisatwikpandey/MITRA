@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@nextui-org/react": "^2.6.11",
-    "cloudinary": "^2.5.1",
+    "cloudinary-react": "^1.8.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "firebase": "^11.3.1",
@@ -20,6 +20,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
+    "react-intersection-observer": "^9.15.1",
     "styled-components": "^6.1.15"
   },
   "devDependencies": {

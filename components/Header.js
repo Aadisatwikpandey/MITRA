@@ -1,11 +1,13 @@
-// Header.js
+// Updated Header.js with darker background
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styled from 'styled-components';
 import Image from 'next/image';
 
 const HeaderContainer = styled.header`
-  background: ${props => props.$scrolled ? props.theme.colors.white : 'transparent'};
+  background: ${props => props.$scrolled 
+    ? props.theme.colors.white 
+    : 'rgba(0, 0, 0, 0.7)'}; /* Darker background when not scrolled */
   position: fixed;
   top: 0;
   left: 0;
@@ -34,7 +36,7 @@ const Logo = styled.div`
 `;
 
 const LogoText = styled.span`
-  color: ${props => props.$scrolled ? props.theme.colors.primary : props.theme.colors.primary};
+  color: ${props => props.$scrolled ? props.theme.colors.primary : 'white'};
   font-size: 1.5rem;
   font-weight: 700;
   font-family: ${props => props.theme.fonts.heading};
@@ -61,7 +63,7 @@ const NavLinks = styled.div`
 
 // Style the Link component directly
 const NavLink = styled(Link)`
-  color: ${props => props.$scrolled ? props.theme.colors.text : props.theme.colors.secondary};
+  color: ${props => props.$scrolled ? props.theme.colors.text : 'white'};
   margin: 0 1rem;
   font-weight: 600;
   position: relative;
@@ -104,7 +106,7 @@ const MenuButton = styled.button`
   display: none;
   background: none;
   border: none;
-  color: ${props => props.$scrolled ? props.theme.colors.text : props.theme.colors.white};
+  color: ${props => props.$scrolled ? props.theme.colors.text : 'white'};
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -122,6 +124,22 @@ const LogoLink = styled(Link)`
   display: flex;
   align-items: center;
   text-decoration: none;
+`;
+
+// Add a mobile overlay for when menu is open
+const MobileOverlay = styled.div`
+  display: ${props => props.$isOpen ? 'block' : 'none'};
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  
+  @media (min-width: ${props => props.theme.breakpoints.md}) {
+    display: none;
+  }
 `;
 
 export default function Header() {
@@ -145,27 +163,47 @@ export default function Header() {
     setIsOpen(!isOpen);
   };
 
+  // Close mobile menu when clicking outside
+  const closeMobileMenu = () => {
+    if (isOpen) {
+      setIsOpen(false);
+    }
+  };
+
   return (
-    <HeaderContainer $scrolled={scrolled}>
-      <Nav>
-        <Logo>
-          <LogoLink href="/">
-            <Image src="/images/mitra-logo.png" alt="MITRA Logo" width={40} height={40} />
-            <LogoText $scrolled={scrolled}>MITRA</LogoText>
-          </LogoLink>
-        </Logo>
-        <MenuButton $scrolled={scrolled} onClick={toggleMenu}>
-          {isOpen ? '✕' : '☰'}
-        </MenuButton>
-        <NavLinks $isOpen={isOpen}>
-          <NavLink href="/" $scrolled={scrolled}>Home</NavLink>
-          <NavLink href="/about" $scrolled={scrolled}>About Us</NavLink>
-          <NavLink href="/get-involved" $scrolled={scrolled}>Get Involved</NavLink>
-          <NavLink href="/news-events" $scrolled={scrolled}>News & Events</NavLink>
-          <NavLink href="/gallery" $scrolled={scrolled}>Gallery</NavLink>
-          <NavLink href="/contact" $scrolled={scrolled}>Contact Us</NavLink>
-        </NavLinks>
-      </Nav>
-    </HeaderContainer>
+    <>
+      <HeaderContainer $scrolled={scrolled}>
+        <Nav>
+          <Logo>
+            <LogoLink href="/">
+              <Image 
+                src="/images/mitra-logo.png" 
+                alt="MITRA Logo" 
+                width={40} 
+                height={40} 
+                style={{ 
+                  filter: !scrolled ? 'brightness(1.2)' : 'none' // Make logo brighter on dark background
+                }} 
+              />
+              <LogoText $scrolled={scrolled}>MITRA</LogoText>
+            </LogoLink>
+          </Logo>
+          <MenuButton $scrolled={scrolled} onClick={toggleMenu}>
+            {isOpen ? '✕' : '☰'}
+          </MenuButton>
+          <NavLinks $isOpen={isOpen}>
+            <NavLink href="/" $scrolled={scrolled}>Home</NavLink>
+            <NavLink href="/about" $scrolled={scrolled}>About Us</NavLink>
+            <NavLink href="/get-involved" $scrolled={scrolled}>Get Involved</NavLink>
+            <NavLink href="/news-events" $scrolled={scrolled}>News & Events</NavLink>
+            <NavLink href="/gallery" $scrolled={scrolled}>Gallery</NavLink>
+            <NavLink href="/contact" $scrolled={scrolled}>Contact Us</NavLink>
+          </NavLinks>
+        </Nav>
+      </HeaderContainer>
+      
+      {/* Mobile overlay to close menu when clicking outside */}
+      <MobileOverlay $isOpen={isOpen} onClick={closeMobileMenu} />
+    </>
   );
 }

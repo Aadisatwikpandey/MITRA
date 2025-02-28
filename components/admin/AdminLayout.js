@@ -1,6 +1,7 @@
 // components/admin/AdminLayout.js
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+
 import { useRouter } from 'next/router';
 import { 
   FaChevronLeft, 
@@ -12,6 +13,7 @@ import {
   FaSignOutAlt, 
   FaUser, 
   FaBars, 
+  FaImages,
   FaCalendarAlt,
   FaChartBar
 } from 'react-icons/fa';
@@ -179,6 +181,19 @@ const AdminLayout = ({ children, user }) => {
               </Link>
             </li>
             
+            <li className={styles.navItem}>
+              <Link 
+                href="/admin/gallery" 
+                className={`${styles.navLink} ${isActive('/admin/gallery') ? styles.navLinkActive : ''}`}>
+                <span className={styles.navIcon}>
+                  <FaImages />
+                </span>
+                <span className={`${styles.navLabel} ${collapsed ? styles.navLabelHidden : ''}`}>
+                  Gallery
+                </span>
+              </Link>
+            </li>
+
             <li className={styles.navItem}>
               <Link 
                 href="/admin/analytics" 
