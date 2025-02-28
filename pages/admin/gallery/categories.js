@@ -1,10 +1,11 @@
-// pages/admin/gallery/categories.js
+// pages/admin/gallery/categories.js - Updated with cascade delete functionality
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import AdminLayout from '../../../components/admin/AdminLayout';
-import { db, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from '../../../lib/firebase';
+import { db, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, Timestamp } from '../../../lib/firebase';
+import { galleryService } from '../../../lib/galleryService';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -276,16 +277,33 @@ const ModalTitle = styled.h2`
   font-size: 1.5rem;
   margin-bottom: 1rem;
   color: ${props => props.theme.colors.text};
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+const ModalWarningIcon = styled(FaExclamationTriangle)`
+  color: #f39c12;
 `;
 
 const ModalText = styled.p`
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+`;
+
+const ModalWarning = styled.div`
+  background-color: rgba(243, 156, 18, 0.1);
+  border-left: 4px solid #f39c12;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 0 4px 4px 0;
 `;
 
 const ModalButtons = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  margin-top: 2rem;
 `;
 
 const ConfirmButton = styled.button`
@@ -300,6 +318,32 @@ const ConfirmButton = styled.button`
   &:hover {
     background-color: #c0392b;
   }
+  
+  &:disabled {
+    background-color: #e57373;
+    cursor: not-allowed;
+  }
+`;
+
+const ConfirmInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #e74c3c;
+  }
+`;
+
+const ModalMessage = styled.div`
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 4px;
+  background-color: ${props => props.success ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)'};
+  color: ${props => props.success ? '#27ae60' : '#e74c3c'};
 `;
 
 const GalleryCategories = () => {
@@ -310,25 +354,42 @@ const GalleryCategories = () => {
   const [editingId, setEditingId] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [modalMessage, setModalMessage] = useState({ text: '', success: false });
+  const [categoryItemsCount, setCategoryItemsCount] = useState({});
   
-  // Fetch categories
+  // Fetch categories and count items
   useEffect(() => {
-    fetchCategories();
+    fetchCategoriesAndCounts();
   }, []);
   
-  // Fetch categories from Firestore
-  const fetchCategories = async () => {
+  // Fetch categories and count the number of items in each
+  const fetchCategoriesAndCounts = async () => {
     try {
       setLoading(true);
       
+      // Fetch categories
       const querySnapshot = await getDocs(collection(db, 'gallery-categories'));
-      
       const fetchedCategories = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       
       setCategories(fetchedCategories);
+      
+      // Count items for each category
+      const counts = {};
+      for (const category of fetchedCategories) {
+        const itemsQuery = query(
+          collection(db, 'gallery'),
+          where('category', '==', category.id)
+        );
+        const itemsSnapshot = await getDocs(itemsQuery);
+        counts[category.id] = itemsSnapshot.size;
+      }
+      
+      setCategoryItemsCount(counts);
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
@@ -374,7 +435,7 @@ const GalleryCategories = () => {
       setFormData({ name: '', description: '' });
       setShowForm(false);
       setEditingId(null);
-      await fetchCategories();
+      await fetchCategoriesAndCounts();
     } catch (error) {
       console.error('Error saving category:', error);
       alert('Failed to save category');
@@ -399,6 +460,8 @@ const GalleryCategories = () => {
   // Open delete modal
   const openDeleteModal = (category) => {
     setCategoryToDelete(category);
+    setDeleteConfirmation('');
+    setModalMessage({ text: '', success: false });
     setDeleteModalOpen(true);
   };
   
@@ -406,28 +469,49 @@ const GalleryCategories = () => {
   const closeDeleteModal = () => {
     setDeleteModalOpen(false);
     setCategoryToDelete(null);
+    setDeleteConfirmation('');
+    setModalMessage({ text: '', success: false });
   };
   
-  // Handle delete category
+  // Handle delete category with cascade delete
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
     
+    // Check if confirmation text matches category name
+    if (deleteConfirmation !== categoryToDelete.name) {
+      setModalMessage({
+        text: 'Confirmation text does not match category name',
+        success: false
+      });
+      return;
+    }
+    
     try {
-      setLoading(true);
+      setDeleteLoading(true);
+      setModalMessage({ text: 'Deleting category and associated items...', success: false });
       
-      // Delete category from Firestore
-      await deleteDoc(doc(db, 'gallery-categories', categoryToDelete.id));
+      // Use the galleryService to delete the category and all its items
+      const result = await galleryService.deleteCategoryWithItems(categoryToDelete.id);
       
-      // Refresh categories
-      await fetchCategories();
+      setModalMessage({
+        text: `Success! Deleted category "${categoryToDelete.name}" and ${result.deletedItems} associated gallery items.`,
+        success: true
+      });
       
-      closeDeleteModal();
+      // Update categories after a short delay
+      setTimeout(() => {
+        fetchCategoriesAndCounts();
+        closeDeleteModal();
+      }, 2000);
+      
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert('Failed to delete category');
-      closeDeleteModal();
+      setModalMessage({
+        text: `Error: ${error.message || 'Failed to delete category'}`,
+        success: false
+      });
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
     }
   };
   
@@ -436,6 +520,11 @@ const GalleryCategories = () => {
     setFormData({ name: '', description: '' });
     setEditingId(null);
     setShowForm(false);
+  };
+  
+  // Handle confirmation input change
+  const handleConfirmationChange = (e) => {
+    setDeleteConfirmation(e.target.value);
   };
   
   return (
@@ -510,6 +599,7 @@ const GalleryCategories = () => {
               <tr>
                 <TableHeaderCell>Name</TableHeaderCell>
                 <TableHeaderCell>Description</TableHeaderCell>
+                <TableHeaderCell>Item Count</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </tr>
             </TableHead>
@@ -518,6 +608,7 @@ const GalleryCategories = () => {
                 <TableRow key={category.id}>
                   <TableCell>{category.name}</TableCell>
                   <TableCell>{category.description || '-'}</TableCell>
+                  <TableCell>{categoryItemsCount[category.id] || 0}</TableCell>
                   <TableCell>
                     <ActionButtons>
                       <ActionButton
@@ -544,20 +635,48 @@ const GalleryCategories = () => {
       </Container>
       
       {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
+      {deleteModalOpen && categoryToDelete && (
         <ModalOverlay>
           <ModalContent>
-            <ModalTitle>Confirm Deletion</ModalTitle>
+            <ModalTitle>
+              <ModalWarningIcon /> Delete Category
+            </ModalTitle>
+            
             <ModalText>
-              Are you sure you want to delete the category "{categoryToDelete?.name}"? 
-              This may affect images assigned to this category.
+              Are you sure you want to delete the category "{categoryToDelete.name}"?
             </ModalText>
+            
+            <ModalWarning>
+              <strong>Warning:</strong> This will also delete all {categoryItemsCount[categoryToDelete.id] || 0} gallery items in this category. This action cannot be undone.
+            </ModalWarning>
+            
+            <ModalText>
+              To confirm deletion, please type the category name:
+            </ModalText>
+            
+            <ConfirmInput
+              type="text"
+              value={deleteConfirmation}
+              onChange={handleConfirmationChange}
+              placeholder={`Type "${categoryToDelete.name}" to confirm`}
+              disabled={deleteLoading}
+            />
+            
+            {modalMessage.text && (
+              <ModalMessage success={modalMessage.success}>
+                {modalMessage.text}
+              </ModalMessage>
+            )}
+            
             <ModalButtons>
-              <CancelButton onClick={closeDeleteModal}>
+              <CancelButton onClick={closeDeleteModal} disabled={deleteLoading}>
                 Cancel
               </CancelButton>
-              <ConfirmButton onClick={confirmDelete}>
-                Delete
+              <ConfirmButton 
+                onClick={confirmDelete} 
+                disabled={deleteConfirmation !== categoryToDelete.name || deleteLoading}
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete Category'}
               </ConfirmButton>
             </ModalButtons>
           </ModalContent>
