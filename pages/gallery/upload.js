@@ -4,9 +4,9 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import styled from 'styled-components';
 import { FaUpload, FaSpinner, FaTimes, FaFileImage, FaFilm } from 'react-icons/fa';
-import AdminLayout from '../../../components/admin/AdminLayout';
-import { db, collection, getDocs, addDoc, Timestamp } from '../../../lib/firebase';
-import { storageService } from '../../../lib/firebaseStorage';
+import AdminLayout from '../../components/admin/AdminLayout';
+import { db, collection, getDocs, addDoc, Timestamp } from '../../lib/firebase';
+import { storageService } from '../../lib/firebaseStorage';
 
 const Container = styled.div`
   max-width: 1200px;
