@@ -1,7 +1,7 @@
-// components/gallery/GalleryLightbox.js - Browser-compatible version
+// components/gallery/GalleryLightbox.js - Fixed video centering
 import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { FaTimes, FaArrowLeft, FaArrowRight, FaDownload } from 'react-icons/fa';
+import { FaTimes, FaArrowLeft, FaArrowRight, FaDownload, FaPlay } from 'react-icons/fa';
 import { cloudinaryService } from '../../lib/cloudinaryService';
 
 const LightboxOverlay = styled.div`
@@ -89,10 +89,12 @@ const ImageContainer = styled.div`
   height: auto;
 `;
 
-const ImageWrapper = styled.div`
+// Updated VideoContainer to ensure perfect centering
+const VideoContainer = styled.div`
   position: relative;
-  width: 100%;
-  height: 100%;
+  max-width: 90%;
+  max-height: 80vh;
+  width: auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -102,6 +104,15 @@ const StyledImage = styled.img`
   max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
+`;
+
+// Updated StyledVideo for better centering
+const StyledVideo = styled.video`
+  max-width: 100%;
+  max-height: 80vh;
+  background-color: black;
+  margin: 0 auto; /* Center horizontally */
+  display: block; /* Ensure block display */
 `;
 
 const NavigationButton = styled.button`
@@ -133,7 +144,7 @@ const NavigationButton = styled.button`
     right: 20px;
   }
   
-  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+  @media (max-width: 768px) {
     width: 40px;
     height: 40px;
     
@@ -184,6 +195,7 @@ const Loading = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   color: white;
+  text-align: center;
 `;
 
 const Spinner = styled.div`
@@ -206,31 +218,36 @@ const GalleryLightbox = ({ items = [], startIndex = 0, onClose }) => {
   const [loading, setLoading] = useState(true);
   
   const currentItem = items[currentIndex] || {};
+  const isVideo = currentItem.mediaType === 'video' || (currentItem.firebaseUrl && currentItem.firebaseUrl.toLowerCase().includes('.mp4'));
   
   // Generate optimized URL for full-size image
   let fullSizeUrl = '';
-  if (currentItem.cloudinaryPublicId) {
-    fullSizeUrl = cloudinaryService.getOptimizedUrl(currentItem.cloudinaryPublicId, {
-      quality: 'auto',
-      format: 'auto'
-    });
-  } else {
-    fullSizeUrl = currentItem.cloudinaryUrl || currentItem.firebaseUrl || '';
-  }
-  
-  // Generate download URL
   let downloadUrl = '';
-  if (currentItem.cloudinaryPublicId) {
-    downloadUrl = cloudinaryService.getOptimizedUrl(currentItem.cloudinaryPublicId, {
-      quality: 90,
-      format: 'jpg',
-      flags: 'attachment'
-    });
+  
+  if (isVideo) {
+    // For videos, we use the normal URL
+    fullSizeUrl = currentItem.firebaseUrl || '';
+    downloadUrl = currentItem.firebaseUrl || '';
   } else {
-    downloadUrl = currentItem.cloudinaryUrl || currentItem.firebaseUrl || '';
+    // For images, we can use the optimization
+    if (currentItem.cloudinaryPublicId) {
+      fullSizeUrl = cloudinaryService.getOptimizedUrl(currentItem.cloudinaryPublicId, {
+        quality: 'auto',
+        format: 'auto'
+      });
+      
+      downloadUrl = cloudinaryService.getOptimizedUrl(currentItem.cloudinaryPublicId, {
+        quality: 90,
+        format: 'jpg',
+        flags: 'attachment'
+      });
+    } else {
+      fullSizeUrl = currentItem.cloudinaryUrl || currentItem.firebaseUrl || '';
+      downloadUrl = currentItem.cloudinaryUrl || currentItem.firebaseUrl || '';
+    }
   }
   
-  // Handle image navigation
+  // Handle navigation
   const showPrevious = () => {
     setLoading(true);
     setCurrentIndex(prev => (prev === 0 ? items.length - 1 : prev - 1));
@@ -267,15 +284,18 @@ const GalleryLightbox = ({ items = [], startIndex = 0, onClose }) => {
     };
   }, [handleKeyDown]);
   
-  // Handle image load
-  const handleImageLoad = () => {
+  // Handle media load
+  const handleMediaLoad = () => {
     setLoading(false);
   };
   
   return (
     <LightboxOverlay onClick={onClose}>
       <LightboxHeader>
-        <CloseButton onClick={onClose}>
+        <CloseButton onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}>
           <FaTimes size={20} />
         </CloseButton>
         
@@ -283,7 +303,7 @@ const GalleryLightbox = ({ items = [], startIndex = 0, onClose }) => {
         
         <DownloadButton 
           href={downloadUrl}
-          download={`${currentItem.title || 'mitra-gallery-image'}.jpg`}
+          download={`${currentItem.title || 'mitra-gallery-media'}.${isVideo ? 'mp4' : 'jpg'}`}
           onClick={e => e.stopPropagation()}
           target="_blank"
           rel="noopener noreferrer"
@@ -301,15 +321,29 @@ const GalleryLightbox = ({ items = [], startIndex = 0, onClose }) => {
           </Loading>
         )}
         
-        <ImageContainer>
-          <ImageWrapper>
+        {isVideo ? (
+          <VideoContainer>
+            <StyledVideo 
+              controls 
+              autoPlay
+              onLoadedData={handleMediaLoad}
+              onClick={e => e.stopPropagation()}
+              width="auto"
+              height="auto"
+            >
+              <source src={fullSizeUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </StyledVideo>
+          </VideoContainer>
+        ) : (
+          <ImageContainer>
             <StyledImage 
               src={fullSizeUrl} 
               alt={currentItem.title || 'Gallery image'}
-              onLoad={handleImageLoad}
+              onLoad={handleMediaLoad}
             />
-          </ImageWrapper>
-        </ImageContainer>
+          </ImageContainer>
+        )}
         
         {items.length > 1 && (
           <>

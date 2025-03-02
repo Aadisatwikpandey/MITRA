@@ -1,22 +1,31 @@
-// components/gallery/GalleryGrid.js - Browser-compatible version
+// components/gallery/GalleryGrid.js - Updated with 5-column grid and video thumbnail support
 import { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { useInView } from 'react-intersection-observer';
+import { FaPlay, FaVideo } from 'react-icons/fa';
 import { cloudinaryService } from '../../lib/cloudinaryService';
 
 const GridContainer = styled.div`
   margin-top: 2rem;
 `;
 
+// Updated grid to display exactly 5 items per row
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(5, 1fr); /* Exactly 5 columns */
+  gap: 1rem;
   
-  @media (max-width: ${props => props.theme.breakpoints.sm}) {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns on medium screens */
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on smaller screens */
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr; /* 1 column on very small screens */
   }
 `;
 
@@ -28,7 +37,7 @@ const ImageContainer = styled.div`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   cursor: pointer;
-  aspect-ratio: ${props => props.aspectRatio || '1/1'};
+  aspect-ratio: 1/1;
   
   &:hover {
     transform: scale(1.03);
@@ -38,6 +47,53 @@ const ImageContainer = styled.div`
   &:hover .image-overlay {
     opacity: 1;
   }
+`;
+
+const PlayButton = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  
+  svg {
+    color: #1E8449;
+    font-size: 24px;
+    margin-left: 4px; /* Slightly offset for play icon */
+  }
+`;
+
+const VideoPlaceholder = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #2C3E50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  
+  svg {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+`;
+
+const VideoLabel = styled.div`
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+  padding: 0 10px;
 `;
 
 const ImageOverlay = styled.div`
@@ -111,33 +167,31 @@ const BlurImage = styled.div`
   opacity: 0.5;
 `;
 
+// Video file extensions
+const videoExtensions = ['.mp4', '.mov', '.avi', '.webm', '.flv', '.wmv', '.mkv'];
+
+// Helper function to check if a URL is a video
+const isVideoURL = (url) => {
+  if (!url) return false;
+  return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+};
+
 const GalleryItem = ({ item, index, onClick, isLastItem, lastItemRef }) => {
   const [loaded, setLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { ref, inView } = useInView({
     triggerOnce: true,
     rootMargin: '200px 0px',
   });
   
-  // Calculate aspect ratio
-  const aspectRatio = item.width && item.height 
-    ? `${item.width}/${item.height}` 
-    : '1/1';
+  // Determine if the item is a video - check both mediaType and URL
+  const isVideo = item.mediaType === 'video' || isVideoURL(item.firebaseUrl);
   
-  // Get image URLs - use Cloudinary URL if available, fallback to regular URL
-  const imageUrl = item.cloudinaryUrl || item.firebaseUrl;
-  
-  // If we have a Cloudinary public ID, use the Cloudinary service for optimized URLs
-  const thumbnailUrl = item.cloudinaryPublicId
-    ? cloudinaryService.getThumbnailUrl(item.cloudinaryPublicId, 300)
-    : imageUrl;
-  
-  const fullUrl = item.cloudinaryPublicId
-    ? cloudinaryService.getOptimizedUrl(item.cloudinaryPublicId, {
-        width: 800, 
-        quality: 'auto',
-        format: 'auto'
-      })
-    : imageUrl;
+  // Determine the proper URL to display
+  // For videos, use thumbnailUrl first, then we'll fall back to a placeholder
+  const displayUrl = isVideo 
+    ? (item.thumbnailUrl || '/images/video-thumbnail-placeholder.jpg')
+    : (item.cloudinaryUrl || item.firebaseUrl || '/images/image-placeholder.jpg');
   
   // Combine refs for last item
   const combineRefs = (el) => {
@@ -147,26 +201,92 @@ const GalleryItem = ({ item, index, onClick, isLastItem, lastItemRef }) => {
     }
   };
   
+  // Extract the file name from the URL for display
+  const getFileNameFromURL = (url) => {
+    if (!url) return "Video";
+    try {
+      // Try to extract filename from URL
+      const urlParts = url.split('/');
+      let fileName = urlParts[urlParts.length - 1];
+      
+      // Remove query parameters
+      if (fileName.includes('?')) {
+        fileName = fileName.split('?')[0];
+      }
+      
+      // URL decode
+      fileName = decodeURIComponent(fileName);
+      
+      // Keep it reasonably short
+      if (fileName.length > 20) {
+        fileName = fileName.substring(0, 17) + '...';
+      }
+      
+      return fileName;
+    } catch {
+      return "Video";
+    }
+  };
+  
+  const handleImageError = () => {
+    console.log("Image failed to load:", displayUrl);
+    setImageError(true);
+  };
+  
   return (
     <ImageContainer 
       ref={combineRefs}
-      aspectRatio={aspectRatio} 
       onClick={() => onClick(index)}
     >
       {inView && (
         <>
-          {!loaded && thumbnailUrl && <BlurImage src={thumbnailUrl} />}
-          {fullUrl && (
-            <Image
-              src={fullUrl}
-              alt={item.title || 'Gallery image'}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              style={{ objectFit: 'cover' }}
-              loading="lazy"
-              onLoad={() => setLoaded(true)}
-            />
+          {isVideo ? (
+            <>
+              {!imageError && item.thumbnailUrl ? (
+                // Use the video thumbnail if available
+                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <Image
+                    src={displayUrl}
+                    alt={item.title || 'Video thumbnail'}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
+                    style={{ objectFit: 'cover' }}
+                    loading="lazy"
+                    onError={handleImageError}
+                    onLoad={() => setLoaded(true)}
+                  />
+                  <PlayButton>
+                    <FaPlay />
+                  </PlayButton>
+                </div>
+              ) : (
+                // Fallback to a video placeholder if no thumbnail or error loading
+                <VideoPlaceholder>
+                  <FaVideo />
+                  <VideoLabel>{item.title || getFileNameFromURL(item.firebaseUrl)}</VideoLabel>
+                  <PlayButton>
+                    <FaPlay />
+                  </PlayButton>
+                </VideoPlaceholder>
+              )}
+            </>
+          ) : (
+            // Regular image
+            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              {!loaded && <BlurImage src="/images/image-placeholder.jpg" />}
+              <Image
+                src={displayUrl}
+                alt={item.title || 'Gallery item'}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
+                style={{ objectFit: 'cover' }}
+                loading="lazy"
+                onError={handleImageError}
+                onLoad={() => setLoaded(true)}
+              />
+            </div>
           )}
+          
           <ImageOverlay className="image-overlay">
             {item.title && <ImageTitle>{item.title}</ImageTitle>}
             {item.description && <ImageDescription>{item.description}</ImageDescription>}
@@ -189,8 +309,8 @@ const GalleryGrid = ({ items = [], onImageClick, loading = false, lastItemRef })
   if (items.length === 0 && !loading) {
     return (
       <NoItems>
-        <h3>No Images Found</h3>
-        <p>There are no images available in this category.</p>
+        <h3>No Items Found</h3>
+        <p>There are no images or videos available in this category.</p>
       </NoItems>
     );
   }

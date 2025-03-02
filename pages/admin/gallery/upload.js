@@ -382,6 +382,60 @@ const GalleryUploadPage = () => {
     setSelectedCategory(e.target.value);
   };
   
+
+  const generateVideoThumbnail = async (videoFile) => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Create video element
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.playsInline = true;
+        video.muted = true;
+        
+        // Set up source
+        const videoUrl = URL.createObjectURL(videoFile);
+        video.src = videoUrl;
+        
+        // Set up event handlers
+        video.onloadeddata = () => {
+          // Seek to 1 second or 25% of the video, whichever is less
+          const seekTime = Math.min(1, video.duration * 0.25);
+          video.currentTime = seekTime;
+        };
+        
+        video.onseeked = () => {
+          // Create canvas and draw video frame
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to Blob
+          canvas.toBlob((blob) => {
+            // Clean up video element
+            URL.revokeObjectURL(videoUrl);
+            resolve(blob);
+          }, 'image/jpeg', 0.7); // JPEG at 70% quality
+        };
+        
+        video.onerror = () => {
+          URL.revokeObjectURL(videoUrl);
+          reject(new Error('Error generating video thumbnail'));
+        };
+        
+        // Start loading the video
+        video.load();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+
+
+
   // Upload files
   const handleUpload = async () => {
     if (files.length === 0) {
@@ -406,11 +460,11 @@ const GalleryUploadPage = () => {
       
       for (const file of files) {
         // Determine file type
-        const isImage = file.type.match('image.*');
-        const mediaType = isImage ? 'images' : 'videos';
+        const isVideo = file.type.match('video.*');
+        const mediaType = isVideo ? 'video' : 'image';
         
         // Create path in Firebase Storage
-        const path = `gallery/${category.name}/${mediaType}/${Date.now()}-${file.name}`;
+        const path = `gallery/${category.name}/${mediaType}s/${Date.now()}-${file.name}`;
         
         // Upload to Firebase Storage
         const fileUrl = await storageService.uploadImage(file, path);
@@ -421,18 +475,47 @@ const GalleryUploadPage = () => {
           .replace(/[-_]/g, ' ')
           .replace(/\b\w/g, l => l.toUpperCase());
         
-        // Add document to Firestore
+        let thumbnailUrl = null;
+        let thumbnailPath = null;
+        
+        // If it's a video, generate and upload a thumbnail
+        if (isVideo) {
+          try {
+            // Generate thumbnail
+            const thumbnailBlob = await generateVideoThumbnail(file);
+            
+            // Create a File object from the Blob
+            const thumbnailFile = new File(
+              [thumbnailBlob], 
+              `thumbnail-${file.name.split('.')[0]}.jpg`, 
+              { type: 'image/jpeg' }
+            );
+            
+            // Upload thumbnail
+            thumbnailPath = `gallery/${category.name}/thumbnails/${Date.now()}-thumbnail-${file.name.split('.')[0]}.jpg`;
+            thumbnailUrl = await storageService.uploadImage(thumbnailFile, thumbnailPath);
+            
+            console.log('Generated and uploaded thumbnail:', thumbnailUrl);
+          } catch (err) {
+            console.error('Error generating thumbnail:', err);
+            // Continue without thumbnail if generation fails
+          }
+        }
+        
+        // Add document to Firestore with thumbnail data if available
         await addDoc(collection(db, 'gallery'), {
           title,
           description: '',
           category: selectedCategory,
           categoryName: category.name,
-          mediaType: isImage ? 'image' : 'video',
+          mediaType,
           firebaseUrl: fileUrl,
           firebasePath: path,
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
+          thumbnailUrl,
+          thumbnailPath,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now()
         });
