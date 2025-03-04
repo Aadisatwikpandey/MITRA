@@ -44,3 +44,5 @@ next-env.d.ts
 private-key.json
 
 
+#helper file for system
+.ps1
