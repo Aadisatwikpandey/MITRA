@@ -1,5 +1,5 @@
 // components/get-involved/sections/ContactForm.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SectionTitle } from '../styles/CommonStyles';
 import { Input, Select, Textarea } from '../styles/CommonStyles';
 import { 
@@ -9,6 +9,7 @@ import {
   SubmitButton,
   NoticeText
 } from '../styles/ContactStyles';
+import { db, collection, addDoc, serverTimestamp } from '../../../lib/firebase';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -37,11 +38,16 @@ export default function ContactForm() {
     setSubmitError('');
 
     try {
-      // In a real implementation, you would send this data to your backend
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save the form data to Firebase
+      const docRef = await addDoc(collection(db, 'contactSubmissions'), {
+        ...formData,
+        fullName: `${formData.firstName} ${formData.lastName}`,
+        status: 'new',
+        viewed: false,
+        createdAt: serverTimestamp(),
+      });
       
-      console.log('Form submitted:', formData);
+      console.log('Form submitted with ID:', docRef.id);
       setSubmitSuccess(true);
       
       // Clear form

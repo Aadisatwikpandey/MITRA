@@ -1,7 +1,6 @@
-// components/admin/AdminLayout.js
+// components/admin/AdminLayout.js - Updated with notification badge
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
 import { useRouter } from 'next/router';
 import { 
   FaChevronLeft, 
@@ -19,6 +18,8 @@ import {
 } from 'react-icons/fa';
 import { authService } from '../../lib/authService';
 import withAuth from './withAuth';
+import NotificationBadge from './NotificationBadge';
+import { contactSubmissionsService } from '../../lib/contactSubmissionsService';
 import styles from '../../styles/admin/AdminLayout.module.css';
 
 const AdminLayout = ({ children, user }) => {
@@ -28,6 +29,7 @@ const AdminLayout = ({ children, user }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userName, setUserName] = useState('');
   const [userInitial, setUserInitial] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
   
   // Process user data
   useEffect(() => {
@@ -41,6 +43,25 @@ const AdminLayout = ({ children, user }) => {
       setUserInitial(initial);
     }
   }, [user]);
+  
+  // Fetch unread submissions count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const count = await contactSubmissionsService.getUnreadCount();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+    
+    fetchUnreadCount();
+    
+    // Set up an interval to refresh the count every minute
+    const intervalId = setInterval(fetchUnreadCount, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
   
   // Handle sidebar toggle
   const toggleSidebar = () => {
@@ -172,11 +193,26 @@ const AdminLayout = ({ children, user }) => {
                 href="/admin/users" 
                 className={`${styles.navLink} ${isActive('/admin/users') ? styles.navLinkActive : ''}`}
               >
-                <span className={styles.navIcon}>
+                <span className={styles.navIcon} style={{ position: 'relative' }}>
                   <FaUsers />
+                  {unreadCount > 0 && (
+                    <NotificationBadge count={unreadCount} />
+                  )}
                 </span>
                 <span className={`${styles.navLabel} ${collapsed ? styles.navLabelHidden : ''}`}>
                   Users
+                  {unreadCount > 0 && !collapsed && (
+                    <span style={{ 
+                      marginLeft: '8px', 
+                      backgroundColor: '#F39C12', 
+                      color: 'white', 
+                      fontSize: '0.7rem',
+                      padding: '2px 6px',
+                      borderRadius: '10px'
+                    }}>
+                      {unreadCount}
+                    </span>
+                  )}
                 </span>
               </Link>
             </li>

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { FaNewspaper, FaUsers, FaChartBar, FaCalendarAlt, FaEdit, FaStar } from 'react-icons/fa';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { newsService } from '../../lib/newsService';
+import ContactSubmissionsWidget from '../../components/admin/ContactSubmissionsWidget';
+import { contactSubmissionsService } from '../../lib/contactSubmissionsService';
 import styles from '../../styles/admin/Dashboard.module.css';
 
 // Dashboard card component
@@ -27,7 +29,9 @@ export default function Dashboard() {
     totalNews: 0,
     featuredCount: 0,
     totalViews: 0,
-    totalLikes: 0
+    totalLikes: 0,
+    totalContacts: 0,
+    newContacts: 0
   });
   const [recentNews, setRecentNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +43,17 @@ export default function Dashboard() {
         setLoading(true);
         
         // Get statistics
-        const statistics = await newsService.getStatistics();
-        setStats(statistics);
+        const newsStats = await newsService.getStatistics();
+        
+        // Get contact form submissions stats
+        const allSubmissions = await contactSubmissionsService.getAllSubmissions();
+        const newSubmissions = allSubmissions.filter(sub => !sub.viewed);
+        
+        setStats({
+          ...newsStats,
+          totalContacts: allSubmissions.length,
+          newContacts: newSubmissions.length
+        });
         
         // Get recent news
         const { news } = await newsService.getPaginatedNews(null, 3);
@@ -96,21 +109,24 @@ export default function Dashboard() {
           />
           
           <DashboardCard
-            title="Total Likes"
-            value={stats.totalLikes}
+            title="Contact Inquiries"
+            value={stats.totalContacts}
             icon={<FaUsers />}
             color="#3498DB"
-            link="/admin/analytics"
+            link="/admin/users"
           />
           
           <DashboardCard
-            title="Featured News"
-            value={stats.featuredCount}
-            icon={<FaStar />}
+            title="New Inquiries"
+            value={stats.newContacts}
+            icon={<FaUsers />}
             color="#9B59B6"
-            link="/admin/news"
+            link="/admin/users"
           />
         </div>
+        
+        {/* Contact Submissions Widget */}
+        <ContactSubmissionsWidget limit={5} />
         
         <div className={styles.recentSection}>
           <div className={styles.sectionHeader}>
@@ -161,8 +177,8 @@ export default function Dashboard() {
             <Link href="/admin/events/create" className={styles.quickLink}>
               Add Event
             </Link>
-            <Link href="/admin/users/invite" className={styles.quickLink}>
-              Invite User
+            <Link href="/admin/users" className={styles.quickLink}>
+              View Inquiries
             </Link>
             <Link href="/admin/settings" className={styles.quickLink}>
               Settings
