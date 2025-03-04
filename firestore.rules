@@ -21,13 +21,24 @@ service cloud.firestore {
       
       // Allow increment operations for likes and views to all users
       allow update: if 
-        isAuthenticated() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'viewCount']) &&
         request.resource.data.likes >= resource.data.likes &&
         request.resource.data.viewCount >= resource.data.viewCount;
     }
     
-    // Events collection rules (similar to news)
+    // Contact submissions collection
+    match /contactSubmissions/{submission} {
+      // Allow anyone to read statistics (count)
+      allow get, list: if true;
+      
+      // Allow anyone to submit a contact form
+      allow create: if true;
+      
+      // Only allow admins to update or delete
+      allow update, delete: if isAdmin();
+    }
+    
+    // Events collection rules
     match /events/{eventId} {
       allow read: if true;
       allow write: if isAdmin();

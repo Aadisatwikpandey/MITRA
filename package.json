@@ -22,8 +22,8 @@
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.15.1",
-    "styled-components": "^6.1.15"
-    
+    "styled-components": "^6.1.15",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
