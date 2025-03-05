@@ -1,31 +1,37 @@
-// components/gallery/GalleryGrid.js - Updated with 5-column grid and video thumbnail support
+// Enhanced GalleryGrid.js with improved responsive design
 import { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { useInView } from 'react-intersection-observer';
 import { FaPlay, FaVideo } from 'react-icons/fa';
-import { cloudinaryService } from '../../lib/cloudinaryService';
 
 const GridContainer = styled.div`
   margin-top: 2rem;
+  width: 100%;
 `;
 
-// Updated grid to display exactly 5 items per row
+// Enhanced grid with improved responsive design
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* Exactly 5 columns */
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(3, 1fr); /* 3 columns on medium screens */
+  /* More granular responsive breakpoints */
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  @media (max-width: 992px) {
+    grid-template-columns: repeat(3, 1fr);
   }
   
   @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns on smaller screens */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
   }
   
   @media (max-width: 480px) {
-    grid-template-columns: 1fr; /* 1 column on very small screens */
+    grid-template-columns: repeat(1, 1fr);
   }
 `;
 
@@ -46,6 +52,13 @@ const ImageContainer = styled.div`
   
   &:hover .image-overlay {
     opacity: 1;
+  }
+  
+  /* Better touch device handling */
+  @media (hover: none) {
+    .image-overlay {
+      opacity: 0.8;
+    }
   }
 `;
 
@@ -68,6 +81,25 @@ const PlayButton = styled.div`
     font-size: 24px;
     margin-left: 4px; /* Slightly offset for play icon */
   }
+  
+  /* Responsive sizing for play button */
+  @media (max-width: 768px) {
+    width: 50px;
+    height: 50px;
+    
+    svg {
+      font-size: 20px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    
+    svg {
+      font-size: 16px;
+    }
+  }
 `;
 
 const VideoPlaceholder = styled.div`
@@ -87,6 +119,14 @@ const VideoPlaceholder = styled.div`
     font-size: 40px;
     margin-bottom: 10px;
   }
+  
+  /* Responsive adjustments for placeholder */
+  @media (max-width: 768px) {
+    svg {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+  }
 `;
 
 const VideoLabel = styled.div`
@@ -94,6 +134,20 @@ const VideoLabel = styled.div`
   margin-top: 10px;
   text-align: center;
   padding: 0 10px;
+  
+  /* Better text handling for smaller screens */
+  @media (max-width: 768px) {
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  /* Show less text on very small screens */
+  @media (max-width: 480px) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
+  }
 `;
 
 const ImageOverlay = styled.div`
@@ -111,18 +165,51 @@ const ImageOverlay = styled.div`
   padding: 1.5rem;
   color: white;
   z-index: 10;
+  
+  /* Improved overlay for touch devices */
+  @media (hover: none) {
+    padding: 1rem;
+  }
+  
+  /* More compact on smaller screens */
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const ImageTitle = styled.h3`
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
+  
+  /* Responsive font sizing */
+  @media (max-width: 992px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const ImageDescription = styled.p`
   margin: 0.25rem 0 0;
   font-size: 0.9rem;
   opacity: 0.9;
+  
+  /* Responsive font sizing and truncation */
+  @media (max-width: 992px) {
+    font-size: 0.8rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  @media (max-width: 480px) {
+    -webkit-line-clamp: 1;
+  }
 `;
 
 const LoadingContainer = styled.div`
@@ -165,6 +252,53 @@ const BlurImage = styled.div`
   transform: scale(1.1);
   z-index: 1;
   opacity: 0.5;
+`;
+
+// Responsive grid container that maintains consistent spacing
+const ResponsiveContainer = styled.div`
+  padding: 0 1rem;
+  
+  @media (max-width: 480px) {
+    padding: 0 0.5rem;
+  }
+`;
+
+// Improved load more button with better responsive behavior
+const LoadMoreButton = styled.button`
+  display: block;
+  margin: 2rem auto;
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: ${props => props.theme.colors.primary};
+  border: 2px solid ${props => props.theme.colors.primary};
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: ${props => props.theme.colors.primary};
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    background-color: #f5f5f5;
+    color: #aaa;
+    border-color: #ddd;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  /* Responsive button on smaller screens */
+  @media (max-width: 768px) {
+    width: 80%;
+    padding: 0.75rem 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
 // Video file extensions
@@ -249,7 +383,7 @@ const GalleryItem = ({ item, index, onClick, isLastItem, lastItemRef }) => {
                     src={displayUrl}
                     alt={item.title || 'Video thumbnail'}
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
+                    sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 992px) 33vw, (max-width: 1200px) 25vw, 20vw"
                     style={{ objectFit: 'cover' }}
                     loading="lazy"
                     onError={handleImageError}
@@ -278,7 +412,7 @@ const GalleryItem = ({ item, index, onClick, isLastItem, lastItemRef }) => {
                 src={displayUrl}
                 alt={item.title || 'Gallery item'}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
+                sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 992px) 33vw, (max-width: 1200px) 25vw, 20vw"
                 style={{ objectFit: 'cover' }}
                 loading="lazy"
                 onError={handleImageError}
@@ -297,7 +431,7 @@ const GalleryItem = ({ item, index, onClick, isLastItem, lastItemRef }) => {
   );
 };
 
-const GalleryGrid = ({ items = [], onImageClick, loading = false, lastItemRef }) => {
+const GalleryGrid = ({ items = [], onImageClick, loading = false, lastItemRef, hasMore = false, onLoadMore = null }) => {
   if (loading && items.length === 0) {
     return (
       <LoadingContainer>
@@ -316,20 +450,34 @@ const GalleryGrid = ({ items = [], onImageClick, loading = false, lastItemRef })
   }
   
   return (
-    <GridContainer>
-      <Grid>
-        {items.map((item, index) => (
-          <GalleryItem
-            key={item.id || index}
-            item={item}
-            index={index}
-            onClick={onImageClick}
-            isLastItem={index === items.length - 1}
-            lastItemRef={lastItemRef}
-          />
-        ))}
-      </Grid>
-    </GridContainer>
+    <ResponsiveContainer>
+      <GridContainer>
+        <Grid>
+          {items.map((item, index) => (
+            <GalleryItem
+              key={item.id || index}
+              item={item}
+              index={index}
+              onClick={onImageClick}
+              isLastItem={index === items.length - 1}
+              lastItemRef={lastItemRef}
+            />
+          ))}
+        </Grid>
+        
+        {hasMore && !loading && onLoadMore && (
+          <LoadMoreButton onClick={onLoadMore}>
+            Load More
+          </LoadMoreButton>
+        )}
+        
+        {loading && items.length > 0 && (
+          <LoadingContainer>
+            <Spinner />
+          </LoadingContainer>
+        )}
+      </GridContainer>
+    </ResponsiveContainer>
   );
 };
 

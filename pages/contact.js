@@ -1,134 +1,15 @@
-// pages/contact.js
-import { useState } from 'react';
-import Head from 'next/head';
+// Enhanced Contact Form with improved validation
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import Image from 'next/image';
-import { FaMapMarkerAlt, FaEnvelope, FaPhone, FaClock, FaSchool } from 'react-icons/fa';
 import { serverTimestamp } from 'firebase/firestore';
 import { db, collection, addDoc } from '../lib/firebase';
 
 // Styled Components
-const PageContainer = styled.div`
-  padding: 0;
-`;
-
-const HeroSection = styled.header`
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/contact-hero.jpg') no-repeat center center;
-  background-size: cover;
-  height: 40vh;
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  margin-bottom: 3rem;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: 700;
-  color: white;
-`;
-
-const ContentContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto 5rem;
-  padding: 0 2rem;
-  
-  @media (max-width: 768px) {
-    padding: 0 1rem;
-  }
-`;
-
-const ContactGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  
-  @media (max-width: 992px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const ContactInfo = styled.div`
-  @media (max-width: 992px) {
-    order: 2;
-  }
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 2.2rem;
-  margin-bottom: 2rem;
-  position: relative;
-  padding-bottom: 15px;
-  color: ${props => props.theme.colors.primary};
-  
-  &:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 70px;
-    height: 3px;
-    background-color: ${props => props.theme.colors.secondary};
-  }
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  margin-bottom: 1.5rem;
-  align-items: flex-start;
-`;
-
-const IconContainer = styled.div`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: rgba(30, 132, 73, 0.1);
-  color: ${props => props.theme.colors.primary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 1rem;
-  flex-shrink: 0;
-  font-size: 1.2rem;
-`;
-
-const InfoContent = styled.div`
-  flex: 1;
-`;
-
-const InfoTitle = styled.h3`
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  color: ${props => props.theme.colors.primary};
-`;
-
-const InfoText = styled.p`
-  color: ${props => props.theme.colors.text};
-  margin: 0;
-  line-height: 1.5;
-`;
-
-const MapContainer = styled.div`
-  margin-top: 3rem;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  height: 300px;
-  position: relative;
-`;
-
-const ContactForm = styled.div`
+const FormContainer = styled.div`
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: 2rem;
-  
-  @media (max-width: 992px) {
-    order: 1;
-  }
 `;
 
 const FormRow = styled.div`
@@ -144,6 +25,7 @@ const FormRow = styled.div`
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
+  position: relative;
 `;
 
 const Label = styled.label`
@@ -156,39 +38,58 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.hasError ? '#e74c3c' : '#ddd'};
   border-radius: 4px;
+  transition: all 0.3s ease;
   
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.colors.primary};
+    border-color: ${props => props.hasError ? '#e74c3c' : props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.hasError 
+      ? 'rgba(231, 76, 60, 0.1)' 
+      : 'rgba(30, 132, 73, 0.1)'};
   }
 `;
 
 const Select = styled.select`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.hasError ? '#e74c3c' : '#ddd'};
   border-radius: 4px;
+  transition: all 0.3s ease;
   
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.colors.primary};
+    border-color: ${props => props.hasError ? '#e74c3c' : props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.hasError 
+      ? 'rgba(231, 76, 60, 0.1)' 
+      : 'rgba(30, 132, 73, 0.1)'};
   }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.hasError ? '#e74c3c' : '#ddd'};
   border-radius: 4px;
   resize: vertical;
   min-height: 150px;
+  transition: all 0.3s ease;
   
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.colors.primary};
+    border-color: ${props => props.hasError ? '#e74c3c' : props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.hasError 
+      ? 'rgba(231, 76, 60, 0.1)' 
+      : 'rgba(30, 132, 73, 0.1)'};
   }
+`;
+
+const ErrorMessage = styled.div`
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+  transition: all 0.3s ease;
 `;
 
 const SubmitButton = styled.button`
@@ -222,13 +123,24 @@ const NoticeText = styled.p`
 const SuccessMessage = styled.div`
   background-color: rgba(39, 174, 96, 0.1);
   color: #27ae60;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 4px;
   margin-bottom: 1.5rem;
   text-align: center;
+  animation: fadeIn 0.5s ease-in;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  h3 {
+    margin-bottom: 0.5rem;
+    color: #27ae60;
+  }
 `;
 
-const ErrorMessage = styled.div`
+const FormError = styled.div`
   background-color: rgba(231, 76, 60, 0.1);
   color: #e74c3c;
   padding: 1rem;
@@ -237,7 +149,12 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
-export default function Contact() {
+// Email validation regex pattern
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// Phone number validation (allows various formats)
+const PHONE_REGEX = /^(\+\d{1,3})?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/;
+
+export default function ContactForm() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -246,9 +163,63 @@ export default function Contact() {
     interest: '',
     message: ''
   });
+  
+  const [formErrors, setFormErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [formValid, setFormValid] = useState(false);
+
+  // Validate form when formData or touched fields change
+  useEffect(() => {
+    const validateForm = () => {
+      const errors = {};
+      
+      // First Name validation
+      if (!formData.firstName.trim()) {
+        errors.firstName = 'First name is required';
+      } else if (formData.firstName.length < 2) {
+        errors.firstName = 'First name must be at least 2 characters';
+      }
+      
+      // Last Name validation
+      if (!formData.lastName.trim()) {
+        errors.lastName = 'Last name is required';
+      } else if (formData.lastName.length < 2) {
+        errors.lastName = 'Last name must be at least 2 characters';
+      }
+      
+      // Email validation
+      if (!formData.email.trim()) {
+        errors.email = 'Email address is required';
+      } else if (!EMAIL_REGEX.test(formData.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+      
+      // Phone validation (optional field)
+      if (formData.phone.trim() && !PHONE_REGEX.test(formData.phone)) {
+        errors.phone = 'Please enter a valid phone number';
+      }
+      
+      // Interest validation
+      if (!formData.interest) {
+        errors.interest = 'Please select an interest';
+      }
+      
+      // Message validation
+      if (!formData.message.trim()) {
+        errors.message = 'Message is required';
+      } else if (formData.message.length < 10) {
+        errors.message = 'Message must be at least 10 characters';
+      }
+      
+      setFormErrors(errors);
+      setFormValid(Object.keys(errors).length === 0);
+    };
+    
+    validateForm();
+  }, [formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -256,10 +227,43 @@ export default function Contact() {
       ...prev,
       [name]: value
     }));
+    
+    // Mark field as touched when changed
+    if (!touched[name]) {
+      setTouched(prev => ({
+        ...prev,
+        [name]: true
+      }));
+    }
+  };
+  
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    
+    // Mark field as touched when blurred
+    if (!touched[name]) {
+      setTouched(prev => ({
+        ...prev,
+        [name]: true
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Mark all fields as touched
+    const allTouched = Object.keys(formData).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+    setTouched(allTouched);
+    
+    // Check if form is valid before submitting
+    if (!formValid) {
+      return;
+    }
+    
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -285,6 +289,7 @@ export default function Contact() {
         interest: '',
         message: ''
       });
+      setTouched({});
       
       // Reset success message after 5 seconds
       setTimeout(() => {
@@ -299,196 +304,144 @@ export default function Contact() {
   };
 
   return (
-    <>
-      <Head>
-        <title>Contact Us | MITRA</title>
-        <meta name="description" content="Get in touch with MITRA. Contact us for inquiries about our educational programs, volunteer opportunities, or donations." />
-      </Head>
-      
-      <PageContainer>
-        <HeroSection>
-          <PageTitle>Contact Us</PageTitle>
-        </HeroSection>
-        
-        <ContentContainer>
-          <ContactGrid>
-            <ContactInfo>
-              <SectionTitle>Get In Touch</SectionTitle>
-              
-              <InfoItem>
-                <IconContainer>
-                  <FaSchool />
-                </IconContainer>
-                <InfoContent>
-                  <InfoTitle>Sandeepani Gyan Kunj</InfoTitle>
-                  <InfoText>Our school and main office where you can visit us.</InfoText>
-                </InfoContent>
-              </InfoItem>
-              
-              <InfoItem>
-                <IconContainer>
-                  <FaMapMarkerAlt />
-                </IconContainer>
-                <InfoContent>
-                  <InfoTitle>Our Address</InfoTitle>
-                  <InfoText>Sandeepani Gyan Kunj, Village Area, District Name, State - 123456, India</InfoText>
-                </InfoContent>
-              </InfoItem>
-              
-              <InfoItem>
-                <IconContainer>
-                  <FaEnvelope />
-                </IconContainer>
-                <InfoContent>
-                  <InfoTitle>Email Us</InfoTitle>
-                  <InfoText>info@mitraorganization.org</InfoText>
-                  <InfoText>support@mitraorganization.org</InfoText>
-                </InfoContent>
-              </InfoItem>
-              
-              <InfoItem>
-                <IconContainer>
-                  <FaPhone />
-                </IconContainer>
-                <InfoContent>
-                  <InfoTitle>Call Us</InfoTitle>
-                  <InfoText>+91 98765 43210</InfoText>
-                  <InfoText>+91 98765 43211</InfoText>
-                </InfoContent>
-              </InfoItem>
-              
-              <InfoItem>
-                <IconContainer>
-                  <FaClock />
-                </IconContainer>
-                <InfoContent>
-                  <InfoTitle>Office Hours</InfoTitle>
-                  <InfoText>Monday to Friday: 9:00 AM - 5:00 PM</InfoText>
-                  <InfoText>Saturday: 9:00 AM - 1:00 PM</InfoText>
-                  <InfoText>Sunday: Closed</InfoText>
-                </InfoContent>
-              </InfoItem>
-              
-              <MapContainer>
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3504.2536055556256!2d77.20659501508338!3d28.56325708243953!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ce26e99911a71%3A0x6518cae26c8beb31!2sIndia%20Gate%2C%20New%20Delhi%2C%20Delhi%20110001!5e0!3m2!1sen!2sin!4v1646404253424!5m2!1sen!2sin" 
-                  width="100%" 
-                  height="100%" 
-                  style={{ border: 0 }} 
-                  allowFullScreen="" 
-                  loading="lazy"
-                  title="MITRA location map"
-                ></iframe>
-              </MapContainer>
-            </ContactInfo>
-            
-            <ContactForm>
-              <SectionTitle>Send Us a Message</SectionTitle>
-              
-              {submitSuccess ? (
-                <SuccessMessage>
-                  <h3>Thank You!</h3>
-                  <p>Your message has been sent successfully. We'll get back to you shortly.</p>
-                </SuccessMessage>
-              ) : (
-                <form onSubmit={handleSubmit}>
-                  <FormRow>
-                    <FormGroup>
-                      <Label htmlFor="firstName">First Name*</Label>
-                      <Input 
-                        id="firstName" 
-                        name="firstName"
-                        type="text" 
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        required 
-                      />
-                    </FormGroup>
-                    
-                    <FormGroup>
-                      <Label htmlFor="lastName">Last Name*</Label>
-                      <Input 
-                        id="lastName" 
-                        name="lastName"
-                        type="text" 
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        required 
-                      />
-                    </FormGroup>
-                  </FormRow>
-                  
-                  <FormRow>
-                    <FormGroup>
-                      <Label htmlFor="email">Email Address*</Label>
-                      <Input 
-                        id="email" 
-                        name="email"
-                        type="email" 
-                        value={formData.email}
-                        onChange={handleChange}
-                        required 
-                      />
-                    </FormGroup>
-                    
-                    <FormGroup>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input 
-                        id="phone" 
-                        name="phone"
-                        type="tel" 
-                        value={formData.phone}
-                        onChange={handleChange}
-                      />
-                    </FormGroup>
-                  </FormRow>
-                  
-                  <FormGroup>
-                    <Label htmlFor="interest">I'm interested in:*</Label>
-                    <Select 
-                      id="interest" 
-                      name="interest"
-                      value={formData.interest}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select an option</option>
-                      <option value="donating">Making a Donation</option>
-                      <option value="volunteering">Volunteering</option>
-                      <option value="sponsoring">Corporate Sponsorship</option>
-                      <option value="events">Attending an Event</option>
-                      <option value="other">Other</option>
-                    </Select>
-                  </FormGroup>
-                  
-                  <FormGroup>
-                    <Label htmlFor="message">Message*</Label>
-                    <Textarea 
-                      id="message" 
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                    ></Textarea>
-                  </FormGroup>
-                  
-                  {submitError && (
-                    <ErrorMessage>{submitError}</ErrorMessage>
-                  )}
-                  
-                  <SubmitButton type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Submitting...' : 'Send Message'}
-                  </SubmitButton>
-                  
-                  <NoticeText>
-                    We respect your privacy. Your information will not be shared with third parties.
-                  </NoticeText>
-                </form>
+    <FormContainer>
+      {submitSuccess ? (
+        <SuccessMessage>
+          <h3>Thank You!</h3>
+          <p>Your message has been sent successfully. We'll get back to you shortly.</p>
+        </SuccessMessage>
+      ) : (
+        <form onSubmit={handleSubmit} noValidate>
+          <FormRow>
+            <FormGroup>
+              <Label htmlFor="firstName">First Name*</Label>
+              <Input 
+                id="firstName" 
+                name="firstName"
+                type="text" 
+                value={formData.firstName}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                hasError={touched.firstName && formErrors.firstName}
+                aria-invalid={touched.firstName && !!formErrors.firstName}
+                aria-describedby={formErrors.firstName ? "firstName-error" : undefined}
+              />
+              {touched.firstName && formErrors.firstName && (
+                <ErrorMessage id="firstName-error">{formErrors.firstName}</ErrorMessage>
               )}
-            </ContactForm>
-          </ContactGrid>
-        </ContentContainer>
-      </PageContainer>
-    </>
+            </FormGroup>
+            
+            <FormGroup>
+              <Label htmlFor="lastName">Last Name*</Label>
+              <Input 
+                id="lastName" 
+                name="lastName"
+                type="text" 
+                value={formData.lastName}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                hasError={touched.lastName && formErrors.lastName}
+                aria-invalid={touched.lastName && !!formErrors.lastName}
+                aria-describedby={formErrors.lastName ? "lastName-error" : undefined}
+              />
+              {touched.lastName && formErrors.lastName && (
+                <ErrorMessage id="lastName-error">{formErrors.lastName}</ErrorMessage>
+              )}
+            </FormGroup>
+          </FormRow>
+          
+          <FormRow>
+            <FormGroup>
+              <Label htmlFor="email">Email Address*</Label>
+              <Input 
+                id="email" 
+                name="email"
+                type="email" 
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                hasError={touched.email && formErrors.email}
+                aria-invalid={touched.email && !!formErrors.email}
+                aria-describedby={formErrors.email ? "email-error" : undefined}
+              />
+              {touched.email && formErrors.email && (
+                <ErrorMessage id="email-error">{formErrors.email}</ErrorMessage>
+              )}
+            </FormGroup>
+            
+            <FormGroup>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input 
+                id="phone" 
+                name="phone"
+                type="tel" 
+                value={formData.phone}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                hasError={touched.phone && formErrors.phone}
+                aria-invalid={touched.phone && !!formErrors.phone}
+                aria-describedby={formErrors.phone ? "phone-error" : undefined}
+              />
+              {touched.phone && formErrors.phone && (
+                <ErrorMessage id="phone-error">{formErrors.phone}</ErrorMessage>
+              )}
+            </FormGroup>
+          </FormRow>
+          
+          <FormGroup>
+            <Label htmlFor="interest">I'm interested in:*</Label>
+            <Select 
+              id="interest" 
+              name="interest"
+              value={formData.interest}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              hasError={touched.interest && formErrors.interest}
+              aria-invalid={touched.interest && !!formErrors.interest}
+              aria-describedby={formErrors.interest ? "interest-error" : undefined}
+            >
+              <option value="">Select an option</option>
+              <option value="donating">Making a Donation</option>
+              <option value="volunteering">Volunteering</option>
+              <option value="sponsoring">Corporate Sponsorship</option>
+              <option value="events">Attending an Event</option>
+              <option value="other">Other</option>
+            </Select>
+            {touched.interest && formErrors.interest && (
+              <ErrorMessage id="interest-error">{formErrors.interest}</ErrorMessage>
+            )}
+          </FormGroup>
+          
+          <FormGroup>
+            <Label htmlFor="message">Message*</Label>
+            <Textarea 
+              id="message" 
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              hasError={touched.message && formErrors.message}
+              aria-invalid={touched.message && !!formErrors.message}
+              aria-describedby={formErrors.message ? "message-error" : undefined}
+            ></Textarea>
+            {touched.message && formErrors.message && (
+              <ErrorMessage id="message-error">{formErrors.message}</ErrorMessage>
+            )}
+          </FormGroup>
+          
+          {submitError && (
+            <FormError>{submitError}</FormError>
+          )}
+          
+          <SubmitButton type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Send Message'}
+          </SubmitButton>
+          
+          <NoticeText>
+            We respect your privacy. Your information will not be shared with third parties.
+          </NoticeText>
+        </form>
+      )}
+    </FormContainer>
   );
 }

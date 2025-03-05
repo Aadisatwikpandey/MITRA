@@ -1,5 +1,5 @@
-// Updated Header.js with darker background
-import { useState, useEffect } from 'react';
+// Enhanced Header.js with smoother mobile menu animations and better state management
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import styled from 'styled-components';
 import Image from 'next/image';
@@ -49,15 +49,18 @@ const NavLinks = styled.div`
   align-items: center;
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
-    display: ${props => (props.$isOpen ? 'flex' : 'none')};
+    position: fixed;
+    top: 0;
+    right: ${props => (props.$isOpen ? '0' : '-100%')};
+    width: 280px;
+    height: 100vh;
     flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
     background: ${props => props.theme.colors.white};
-    box-shadow: ${props => props.theme.shadows.medium};
-    padding: 1rem 0;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    padding: 5rem 2rem 2rem;
+    transition: right 0.3s ease-in-out;
+    align-items: flex-start;
+    z-index: 1000;
   }
 `;
 
@@ -91,13 +94,13 @@ const NavLink = styled(Link)`
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     color: ${props => props.theme.colors.text};
-    margin: 0.5rem 0;
-    padding: 0.5rem 2rem;
+    margin: 0.8rem 0;
+    padding: 0.5rem 0;
     width: 100%;
-    text-align: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 
     &:hover {
-      background-color: ${props => props.theme.colors.background};
+      transform: translateX(5px);
     }
   }
 `;
@@ -110,6 +113,7 @@ const MenuButton = styled.button`
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  z-index: 1100;
 
   &:hover {
     color: ${props => props.theme.colors.secondary};
@@ -136,6 +140,28 @@ const MobileOverlay = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  transition: opacity 0.3s ease-in-out;
+  
+  @media (min-width: ${props => props.theme.breakpoints.md}) {
+    display: none;
+  }
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: ${props => props.theme.colors.text};
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1100;
+  
+  &:hover {
+    color: ${props => props.theme.colors.secondary};
+  }
   
   @media (min-width: ${props => props.theme.breakpoints.md}) {
     display: none;
@@ -145,6 +171,7 @@ const MobileOverlay = styled.div`
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -158,6 +185,31 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Handle click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -188,16 +240,17 @@ export default function Header() {
               <LogoText $scrolled={scrolled}>MITRA</LogoText>
             </LogoLink>
           </Logo>
-          <MenuButton $scrolled={scrolled} onClick={toggleMenu}>
+          <MenuButton $scrolled={scrolled} onClick={toggleMenu} aria-label="Toggle menu">
             {isOpen ? '✕' : '☰'}
           </MenuButton>
-          <NavLinks $isOpen={isOpen}>
-            <NavLink href="/" $scrolled={scrolled}>Home</NavLink>
-            <NavLink href="/about" $scrolled={scrolled}>About Us</NavLink>
-            <NavLink href="/get-involved" $scrolled={scrolled}>Get Involved</NavLink>
-            <NavLink href="/news-events" $scrolled={scrolled}>News & Events</NavLink>
-            <NavLink href="/gallery" $scrolled={scrolled}>Gallery</NavLink>
-            <NavLink href="/contact" $scrolled={scrolled}>Contact Us</NavLink>
+          <NavLinks ref={menuRef} $isOpen={isOpen}>
+            <CloseButton onClick={closeMobileMenu} aria-label="Close menu">✕</CloseButton>
+            <NavLink href="/" $scrolled={scrolled} onClick={closeMobileMenu}>Home</NavLink>
+            <NavLink href="/about" $scrolled={scrolled} onClick={closeMobileMenu}>About Us</NavLink>
+            <NavLink href="/get-involved" $scrolled={scrolled} onClick={closeMobileMenu}>Get Involved</NavLink>
+            <NavLink href="/news-events" $scrolled={scrolled} onClick={closeMobileMenu}>News & Events</NavLink>
+            <NavLink href="/gallery" $scrolled={scrolled} onClick={closeMobileMenu}>Gallery</NavLink>
+            <NavLink href="/contact" $scrolled={scrolled} onClick={closeMobileMenu}>Contact Us</NavLink>
           </NavLinks>
         </Nav>
       </HeaderContainer>
